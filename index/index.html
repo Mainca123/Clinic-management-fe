@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>MediPro | Hệ thống quản lý y tế hiện đại</title>
+   
+	<link rel="stylesheet" href="../style/base.css">
+	<link rel="stylesheet" href="../style/components.css">
+	<link rel="stylesheet" href="../style/landing.css">
+	
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+</head>
+<body class="landing-body">
+
+    <header class="landing-header">
+        <div class="logo">
+            <span class="logo-icon">✚</span>
+            <span class="logo-text">Medi<span class="text-primary">Pro</span></span>
+        </div>
+        <div class="cta-group" style="display: flex; gap: 12px;">
+            <a href="login.html" class="btn-action secondary">Đăng nhập</a>
+            <a href="register.html" class="btn-action">Tham gia ngay</a>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Giải pháp <span class="text-primary">Y tế số</span> cho phòng khám hiện đại.</h1>
+            <p>Tối ưu hóa quy trình khám chữa bệnh, quản lý lịch hẹn và hồ sơ bệnh nhân chỉ trên một nền tảng tập trung.</p>
+            <div class="cta-group" style="display: flex; gap: 20px; margin-top: 8px;">
+                <a href="register.html" class="btn-hero">Bắt đầu miễn phí →</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1000&q=80" alt="Bác sĩ sử dụng công nghệ y tế hiện đại">
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <span class="section-tag">Tại sao chọn chúng tôi?</span>
+        <h2 class="section-title">Nâng tầm trải nghiệm khám chữa bệnh</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-box">📅</div>
+                <h3>Lịch hẹn thông minh</h3>
+                <p>Tự động nhắc lịch và sắp xếp ca khám một cách khoa học, giảm thiểu thời gian chờ đợi, tối ưu hóa nguồn lực phòng khám.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon-box">📁</div>
+                <h3>Hồ sơ số hóa</h3>
+                <p>Bệnh án điện tử được bảo mật và truy xuất tức thì, giúp bác sĩ chẩn đoán chính xác hơn, đồng bộ dữ liệu mọi lúc.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon-box">📈</div>
+                <h3>Báo cáo chuyên sâu</h3>
+                <p>Theo dõi doanh thu, số lượng bệnh nhân và hiệu suất phòng khám theo thời gian thực, đưa ra quyết định chiến lược dễ dàng.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 MediPro Ecosystem. Designed by <span class="text-primary">Giàng Seo Chính - HaUI</span>.</p>
+    </footer>
+
+    <!-- Optional: tiny interactive consistency (giữ nguyên cấu trúc và không lỗi) -->
+    <script>
+        // Giữ nguyên trải nghiệm mượt, xử lý active link (chỉ thẩm mỹ)
+        (function() {
+            // đảm bảo các liên kết demo giữ nguyên hành vi không làm đổi hướng gây lỗi
+            const demoBtn = document.querySelector('.btn-outline-light');
+            if(demoBtn) {
+                demoBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert("🚀 MediPro Demo: Trải nghiệm quản lý y tế thông minh sắp ra mắt! Liên hệ để dùng thử.");
+                });
+            }
+            // thêm hiệu ứng hover nâng cao cho card
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transition = 'all 0.3s ease';
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách lịch hẹn | MediPro</title>
+	<link rel="stylesheet" href="../style/base.css">
+	<link rel="stylesheet" href="../style/components.css">
+	<link rel="stylesheet" href="../style/doctor.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">✚</span>
+                <span class="logo-text">Medi<span class="text-primary">Pro</span></span>
+            </div>
+            <nav class="nav-menu">
+                <a href="doctor-dashboard.html" class="nav-item">
+                    <span class="icon">📊</span> Tổng quan
+                </a>
+                <a href="doctor-appointments.html" class="nav-item active">
+                    <span class="icon">📅</span> Lịch hẹn
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">👤</span> Bệnh nhân
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📈</span> Thống kê
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item logout">🚪 Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Tìm tên bệnh nhân...">
+                </div>
+                <div class="user-profile">
+                    <img src="https://api.dicebear.com/8.x/adventurer/svg?seed=NVA" class="avatar">
+                    <span class="user-name">BS. Nguyễn Văn A</span>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="card-header" style="margin-bottom: 20px;">
+                    <h1 class="page-title">Danh sách lịch hẹn</h1>
+                    <input type="date" class="custom-input" style="width: 200px;">
+                </div>
+
+                <div class="card">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Bệnh nhân</th>
+                                <th>Thời gian</th>
+                                <th>Triệu chứng</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>Nguyễn Văn Mạnh</b><br><small>ID: 1005</small></td>
+                                <td>09:30 - Hôm nay</td>
+                                <td>Đau bụng dưới...</td>
+                                <td><span class="status-badge pending">Chờ khám</span></td>
+                                <td><button class="btn-action" onclick="location.href='doctor-exam.html'">Khám</button></td>
+                            </tr>
+                            <tr>
+                                <td><b>Lê Thị Vệ</b><br><small>ID: 1002</small></td>
+                                <td>10:00 - Hôm nay</td>
+                                <td>Ho khan, sốt</td>
+                                <td><span class="status-badge processing">Đang khám</span></td>
+                                <td><button class="btn-action" onclick="location.href='doctor-exam.html'">Tiếp tục</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="pagination">
+                        <button class="page-btn">«</button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">»</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="doctor.js"></script>
+</body>
+</html>

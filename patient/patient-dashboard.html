@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>MediPro | Bệnh nhân Dashboard</title>
+	<link rel="stylesheet" href="../style/patient.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <style>
+        
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar trái - các chức năng chính (bỏ bệnh nhân, thống kê thay bằng tư vấn) -->
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">✚</span>
+            <span class="logo-text">Medi<span class="text-primary">Pro</span></span>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active">
+                <span class="icon">📊</span> Tổng quan
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">📅</span> Lịch hẹn của tôi
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">💊</span> Đơn thuốc
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">📋</span> Hồ sơ sức khỏe
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">💬</span> Tư vấn trực tuyến
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="#" class="nav-item logout">
+                <span class="icon">🚪</span> Đăng xuất
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="main-header">
+            <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" placeholder="Tìm kiếm bác sĩ, chuyên khoa...">
+            </div>
+            <div class="user-profile">
+                <span class="notification-icon">🔔<span class="badge">2</span></span>
+                <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=PatientHappy&backgroundColor=0f6eff" alt="Avatar" class="avatar">
+                <div class="user-info">
+                    <span class="user-name">Nguyễn Thị Hồng</span>
+                    <span class="user-role">Mã BN: P-1024</span>
+                </div>
+                <span class="dropdown-icon">▼</span>
+            </div>
+        </header>
+
+        <div class="page-content">
+            <h1 class="page-title">Chào mừng, bạn đã sẵn sàng chăm sóc sức khỏe hôm nay? 💙</h1>
+            <p class="page-subtitle">Quản lý lịch hẹn, theo dõi tư vấn và hồ sơ y tế tập trung.</p>
+
+            <div class="patient-dashboard-grid">
+                <!-- Cột trái: Danh sách lịch hẹn đã, đang và sắp diễn ra với bác sĩ -->
+                <div class="appointments-section">
+                    <div class="section-header">
+                        <h2>Lịch hẹn của bạn</h2>
+                        <a href="#" class="view-link">Xem tất cả →</a>
+                    </div>
+                    <div class="appointment-list">
+                        <!-- Lịch hẹn đang diễn ra -->
+                        <div class="appointment-card">
+                            <div class="doctor-info">
+                                <img src="https://api.dicebear.com/8.x/adventurer/svg?seed=DrHa&backgroundColor=0f6eff" class="doctor-avatar" alt="Doctor">
+                                <div class="doctor-details">
+                                    <h4>BS. Trần Thu Hà</h4>
+                                    <span class="doctor-specialty">Chuyên khoa Nhi</span>
+                                </div>
+                            </div>
+                            <div class="appointment-meta">
+                                <span class="appointment-time">⏰ Hôm nay, 09:00 - 09:30</span>
+                                <span class="status-badge status-confirmed">Đang diễn ra</span>
+                            </div>
+                            <button class="btn-cancel" onclick="alert('Hủy lịch hẹn với BS. Trần Thu Hà?')">Hủy lịch</button>
+                        </div>
+
+                        <!-- Lịch hẹn sắp tới (chưa diễn ra) -->
+                        <div class="appointment-card">
+                            <div class="doctor-info">
+                                <img src="https://api.dicebear.com/8.x/adventurer/svg?seed=DrNam&backgroundColor=0f6eff" class="doctor-avatar" alt="Doctor">
+                                <div class="doctor-details">
+                                    <h4>BS. Lê Văn Nam</h4>
+                                    <span class="doctor-specialty">Khoa Nội tổng quát</span>
+                                </div>
+                            </div>
+                            <div class="appointment-meta">
+                                <span class="appointment-time">📅 15/04/2026, 14:00 - 14:30</span>
+                                <span class="status-badge status-upcoming">Sắp diễn ra</span>
+                            </div>
+                            <button class="btn-cancel" onclick="alert('Hủy lịch hẹn với BS. Lê Văn Nam?')">Hủy lịch</button>
+                        </div>
+
+                        <!-- Lịch hẹn đã hoàn thành (không hiển thị nút hủy, thay bằng trạng thái) -->
+                        <div class="appointment-card">
+                            <div class="doctor-info">
+                                <img src="https://api.dicebear.com/8.x/adventurer/svg?seed=DrTuan&backgroundColor=0f6eff" class="doctor-avatar" alt="Doctor">
+                                <div class="doctor-details">
+                                    <h4>BS. Phạm Minh Tuấn</h4>
+                                    <span class="doctor-specialty">Răng Hàm Mặt</span>
+                                </div>
+                            </div>
+                            <div class="appointment-meta">
+                                <span class="appointment-time">✅ 10/04/2026, 08:30 - 09:00</span>
+                                <span class="status-badge status-completed">Đã khám</span>
+                            </div>
+                            <button class="btn-cancel" style="opacity:0.5; pointer-events:none;" disabled>Đã hoàn thành</button>
+                        </div>
+
+                        <!-- Thêm một lịch sắp tới khác -->
+                        <div class="appointment-card">
+                            <div class="doctor-info">
+                                <img src="https://api.dicebear.com/8.x/adventurer/svg?seed=DrMinh&backgroundColor=0f6eff" class="doctor-avatar" alt="Doctor">
+                                <div class="doctor-details">
+                                    <h4>BS. Hoàng Minh Đức</h4>
+                                    <span class="doctor-specialty">Tim mạch</span>
+                                </div>
+                            </div>
+                            <div class="appointment-meta">
+                                <span class="appointment-time">📅 18/04/2026, 10:00 - 10:45</span>
+                                <span class="status-badge status-upcoming">Chờ xác nhận</span>
+                            </div>
+                            <button class="btn-cancel" onclick="alert('Hủy lịch hẹn với BS. Hoàng Minh Đức?')">Hủy lịch</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột phải: Tư vấn trực tuyến + thông tin bổ sung -->
+                <div class="right-panel">
+                    <div class="consult-card">
+                        <div class="consult-icon">💬</div>
+                        <h3>Tư vấn trực tuyến</h3>
+                        <p>Kết nối ngay với bác sĩ qua video call hoặc chat. Nhận lời khuyên y tế nhanh chóng, tiện lợi.</p>
+                        <button class="btn-consult" onclick="alert('Đang kết nối đến dịch vụ tư vấn trực tuyến...')">💙 Bắt đầu tư vấn ngay</button>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>📌 Lời khuyên sức khỏe hôm nay</h4>
+                        <div class="health-tip">
+                            <p>💧 Uống đủ 2 lít nước mỗi ngày giúp tăng cường trao đổi chất và thanh lọc cơ thể.</p>
+                        </div>
+                        <div class="health-tip" style="margin-top: 12px; background:#fefce8;">
+                            <p>🍎 Bổ sung vitamin C từ trái cây tươi giúp đề kháng tốt hơn khi thời tiết chuyển mùa.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>📄 Hồ sơ y tế nhanh</h4>
+                        <p style="font-size:0.85rem; color: var(--text-sub); margin-bottom: 16px;">Các chỉ số cơ bản gần nhất</p>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding: 8px 0;">
+                            <span>Huyết áp</span><strong>120/80 mmHg</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding: 8px 0;">
+                            <span>Nhịp tim</span><strong>78 bpm</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                            <span>BMI</span><strong>22.1 (Bình thường)</strong>
+                        </div>
+                        <button class="btn-consult" style="background: white; border:1px solid var(--primary); color: var(--primary); margin-top: 16px;" onclick="alert('Xem chi tiết hồ sơ sức khỏe')">Xem chi tiết →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Thêm một số tương tác nhỏ cho đồng bộ (nút hủy lịch đã có alert)
+    // Tìm kiếm demo
+    const searchInput = document.querySelector('.search-bar input');
+    if(searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                alert(`🔎 Tìm kiếm: "${searchInput.value.trim()}"\nTính năng đang cập nhật.`);
+            }
+        });
+    }
+    // Đăng xuất demo
+    const logoutBtn = document.querySelector('.logout');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Đăng xuất khỏi MediPro. Hẹn gặp lại bạn!');
+            // chuyển hướng về login nếu muốn (demo)
+            // window.location.href = "login.html";
+        });
+    }
+    // Các nút sidebar điều hướng demo
+    const navItems = document.querySelectorAll('.nav-item:not(.logout)');
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert(`🚀 Chức năng "${item.innerText.trim()}" đang được phát triển, bạn sẽ sớm trải nghiệm!`);
+        });
+    });
+    // active hiệu ứng cho menu đơn giản
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', function() {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+</script>
+</body>
+</html>
