@@ -249,9 +249,7 @@ const PatientAppointments = () => {
           user={user}
         />
         <div className="page-content">
-          <h1 className="page-title">Lịch khám của bạn</h1>
-          <p className="page-subtitle">Quản lý các lịch hẹn, xem chi tiết và theo dõi tình trạng khám bệnh.</p>
-          <div className="patient-dashboard-grid">
+          <div className="patient-dashboard-grid" style={{ gridTemplateColumns: '1fr' }}>
             <AppointmentSection
               setIsModalOpen={setIsModalOpen}
               isLoadingAppointments={isLoadingAppointments}

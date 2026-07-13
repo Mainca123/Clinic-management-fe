@@ -126,9 +126,6 @@ const PatientDrugPrice = () => {
           user={user}
         />
         <div className="page-content">
-          <h1 className="page-title">Tra cứu giá thuốc</h1>
-          <p className="page-subtitle">Tìm kiếm thông tin thuốc và giá niêm yết nhanh chóng.</p>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
             <section style={{ background: '#fff', borderRadius: '14px', padding: '18px', boxShadow: '0 8px 20px rgba(15, 23, 42, 0.06)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>

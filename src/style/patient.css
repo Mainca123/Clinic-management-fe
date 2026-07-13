@@ -223,19 +223,320 @@ display: inline-block;
 
 /* Page content */
 .page-content {
-padding: 32px 40px;
-max-width: 1400px;
+  padding: 16px 18px;
+  max-width: 1080px;
 }
 
 .page-title {
-font-size: 1.8rem;
-font-weight: 700;
-margin-bottom: 8px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.ai-chat-card {
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 20px 40px rgba(45, 101, 255, 0.1);
+  position: relative;
+  min-height: 540px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ai-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.ai-chat-badge {
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ai-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 340px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 16px;
+}
+
+.ai-chat-message {
+  display: flex;
+  width: 100%;
+}
+
+.ai-chat-message.user {
+  justify-content: flex-end;
+}
+
+.ai-chat-message.bot {
+  justify-content: flex-start;
+}
+
+.ai-chat-bubble {
+  max-width: 85%;
+  border-radius: 18px;
+  padding: 14px 16px;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 20px rgba(15, 76, 129, 0.05);
+}
+
+.ai-chat-message.user .ai-chat-bubble {
+  background: #2563eb;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-chat-message.bot .ai-chat-bubble {
+  background: white;
+  color: #334155;
+  border: 1px solid #dbeafe;
+  border-bottom-left-radius: 4px;
+}
+
+.doctor-recommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doctor-reco-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doctor-reco-advice {
+  color: #475569;
+}
+
+.doctor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doctor-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid #eef6ff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.04);
+}
+
+.doctor-card-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.doctor-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.doctor-meta {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.doctor-dept {
+  font-size: 0.85rem;
+  color: #60a5fa;
+  margin-top: 6px;
+}
+
+.doctor-card-right {
+  display: flex;
+  align-items: center;
+}
+
+.doctor-contact {
+  background: #2563eb;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* Disease trend styles */
+.trend-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trend-left {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.trend-label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.severity-badge {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.severity-badge.high {
+  background: linear-gradient(90deg,#fee2e2,#fecaca);
+  color: #b91c1c;
+}
+
+.severity-badge.medium {
+  background: linear-gradient(90deg,#fff7ed,#ffedd5);
+  color: #9a3412;
+}
+
+.severity-badge.low {
+  background: linear-gradient(90deg,#eff6ff,#e0f2fe);
+  color: #1e40af;
+}
+
+.trend-bar-bg {
+  width: 100%;
+  height: 14px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.trend-bar-fill {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.trend-count {
+  font-size: 0.95rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.trend-delta {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.trend-delta.up {
+  color: #b91c1c;
+  background: linear-gradient(90deg,#fee2e2,#fecaca);
+}
+
+.trend-delta.down {
+  color: #064e3b;
+  background: linear-gradient(90deg,#ecfdf5,#dcfce7);
+}
+
+.ai-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #475569;
+  font-style: italic;
+}
+
+.typing-indicator {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  animation: blink 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+
+.ai-chat-form {
+  display: flex;
+  gap: 12px;
+}
+
+.ai-chat-input {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-chat-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.ai-chat-send {
+  min-width: 120px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.ai-chat-send:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.ai-chat-send:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
 }
 
 .page-subtitle {
-color: var(--text-sub);
-margin-bottom: 32px;
+  color: var(--text-sub);
+  margin-bottom: 20px;
+  font-size: 0.98rem;
+  line-height: 1.45;
 }
 
 /* Grid layout chính: 2 cột, cột trái là lịch hẹn, cột phải là tư vấn + thông tin */
@@ -247,19 +548,19 @@ gap: 28px;
 
 /* Appointment section (danh sách lịch hẹn) */
 .appointments-section {
-background: white;
-border-radius: 32px;
-border: 1px solid var(--border-light);
-padding: 24px;
-box-shadow: var(--card-shadow);
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--border-light);
+  padding: 18px;
+  box-shadow: var(--card-shadow);
 }
 
 .section-header {
-display: flex;
-justify-content: space-between;
-align-items: baseline;
-margin-bottom: 24px;
-flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .section-header h2 {
@@ -281,16 +582,16 @@ gap: 20px;
 }
 
 .appointment-card {
-display: flex;
-align-items: center;
-justify-content: space-between;
-background: #fefefe;
-border-radius: 28px;
-padding: 16px 20px;
-border: 1px solid var(--border-light);
-transition: var(--transition);
-flex-wrap: wrap;
-gap: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fefefe;
+  border-radius: 24px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-light);
+  transition: var(--transition);
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .appointment-card:hover {
@@ -327,17 +628,19 @@ margin-top: 4px;
 }
 
 .appointment-meta {
-display: flex;
-flex-direction: column;
-gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 240px;
+  align-items: flex-start;
 }
 
 .appointment-time {
-font-size: 0.85rem;
-color: var(--text-sub);
-display: flex;
-align-items: center;
-gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .status-badge {

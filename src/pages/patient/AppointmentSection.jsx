@@ -10,14 +10,7 @@ const AppointmentSection = ({ setIsModalOpen, isLoadingAppointments, appointment
         <h2>Lịch hẹn của bạn</h2>
         
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* 🚀 NÚT MỚI: Cho phép Bệnh nhân bấm xem tất cả bệnh án cũ của CHÍNH MÌNH */}
-          <button onClick={handleViewOwnHistory} style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>📜 Lịch sử bệnh án</button>
-
-          {/* Ô tìm bệnh án lẻ */}
-          <input type="number" placeholder="Mã số Bệnh án..." value={searchRecordId} onChange={e => setSearchRecordId(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '120px', fontSize: '14px' }} />
-          <button onClick={() => handleViewMedicalRecord(searchRecordId)} style={{ padding: '#10b981', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', padding: '8px 16px' }}>Xem BA</button>
-          
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>+ Đặt lịch nhanh</button>
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Đặt lịch khám</button>
         </div>
       </div>
       <div className="appointment-list">
@@ -42,7 +35,6 @@ const AppointmentSection = ({ setIsModalOpen, isLoadingAppointments, appointment
                 {appt.status !== 'CANCELLED' && (
                   <button className="btn-cancel" onClick={() => handleCancelAppointment(appt.id)}>Hủy lịch</button>
                 )}
-                <button className="btn-cancel" onClick={() => handlePatientDeleteAppointment(appt.id)} style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}>Xóa</button>
               </div>
             </div>
           ))

@@ -154,9 +154,6 @@ const PatientMedicalRecords = () => {
           user={user}
         />
         <div className="page-content">
-          <h1 className="page-title">Hồ sơ bệnh án</h1>
-          <p className="page-subtitle">Xem lịch sử bệnh án, chẩn đoán và đơn thuốc của bạn.</p>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <section style={{ background: '#fff', borderRadius: '14px', padding: '18px', boxShadow: '0 8px 20px rgba(15, 23, 42, 0.06)' }}>
               <h3 style={{ marginTop: 0, color: '#0f172a' }}>📜 Lịch sử bệnh án</h3>

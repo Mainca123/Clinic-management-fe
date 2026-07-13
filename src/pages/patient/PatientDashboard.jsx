@@ -49,7 +49,18 @@ const PatientDashboard = () => {
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const chatBoxRef = useRef(null);
+  const chatInputRef = useRef(null);
   
+  useEffect(() => {
+    chatInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!isAiLoading) {
+      chatInputRef.current?.focus();
+    }
+  }, [isAiLoading]);
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -265,11 +276,15 @@ const handleCancelAppointment = async (id) => {
         }
       );
 
-      const aiReply = typeof response.data === 'string'
-        ? response.data
-        : response.data?.message || response.data?.reply || response.data?.content || response.data?.data?.message || response.data?.data?.reply || 'AI chưa trả lời được. Vui lòng thử lại.';
+      const data = response.data || {};
+      const aiReply = typeof data === 'string'
+        ? data
+        : data?.message || data?.reply || data?.content || data?.data?.message || data?.data?.reply || 'AI chưa trả lời được. Vui lòng thử lại.';
 
-      setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: aiReply }]);
+      const payload = data.payload || data.data?.payload || null;
+      const tool = data.tool || data.data?.tool || null;
+
+      setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: aiReply, payload, tool }]);
     } catch (error) {
       setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: 'Xin lỗi, hiện tại AI chưa thể phản hồi. Vui lòng thử lại sau.' }]);
     } finally {
@@ -278,10 +293,10 @@ const handleCancelAppointment = async (id) => {
   };
 
   const trendData = [
-    { label: 'T2', value: 42 },
-    { label: 'T3', value: 58 },
-    { label: 'T4', value: 51 },
-    { label: 'T5', value: 67 }
+    { label: 'Đau bụng', current: 120, previous: 95 },
+    { label: 'Tiêu chảy', current: 78, previous: 85 },
+    { label: 'Sốt', current: 62, previous: 58 },
+    { label: 'Ho', current: 40, previous: 45 }
   ];
   
   return (
@@ -294,43 +309,81 @@ const handleCancelAppointment = async (id) => {
           isSearching={isSearching} apiError={apiError} searchResults={searchResults} user={user}
         />
         <div className="page-content">
-          <h1 className="page-title">Chào mừng {user?.fullName || 'bạn'}, đã sẵn sàng chăm sóc sức khỏe hôm nay?  💙 </h1>
-          <p className="page-subtitle">Quản lý lịch hẹn, theo dõi tư vấn và hồ sơ y tế tập trung.</p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px', marginBottom: '24px' }}>
-            <section style={{ background: 'linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%)', border: '1px solid #dbeafe', borderRadius: '16px', padding: '18px', boxShadow: '0 8px 20px rgba(15, 110, 255, 0.08)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.85fr', gap: '20px', marginBottom: '24px' }}>
+            <section className="ai-chat-card">
+              <div className="ai-chat-header">
                 <div>
-                  <h3 style={{ margin: 0, color: '#0f172a' }}>💬 Khung chat AI hỗ trợ sức khỏe</h3>
-                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Mở rộng khả năng trao đổi và đề xuất theo dõi cho bệnh nhân.</p>
+                  <h3 style={{ margin: 0, color: '#0f172a' }}>💬 Trợ lý AI Hỗ trợ Bệnh nhân</h3>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#475569' }}>Nổi bật, dễ nhận diện và luôn sẵn sàng giải đáp nhanh.</p>
                 </div>
-                <span style={{ background: '#dbeafe', color: '#2563eb', padding: '6px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold' }}>Đang phát triển</span>
+                <span className="ai-chat-badge">Tư vấn nhanh</span>
               </div>
 
-              <div ref={chatBoxRef} style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '240px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+              <div ref={chatBoxRef} className="ai-chat-messages">
                 {chatMessages.map(msg => (
-                  <div key={msg.id} style={{ alignSelf: msg.type === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
-                    <div style={{ padding: '10px 12px', borderRadius: '12px', background: msg.type === 'user' ? '#2563eb' : '#ffffff', color: msg.type === 'user' ? '#fff' : '#334155', border: msg.type === 'bot' ? '1px solid #e2e8f0' : 'none', boxShadow: msg.type === 'bot' ? '0 2px 6px rgba(0,0,0,0.04)' : 'none' }}>
-                      {msg.text}
-                    </div>
+                  <div key={msg.id} className={`ai-chat-message ${msg.type}`}>
+                    {msg.type === 'bot' && msg.payload && msg.tool === 'DOCTOR_TOOL' ? (
+                      <div className="doctor-recommendation">
+                        <div className="doctor-reco-header">
+                          <div>
+                            <div style={{ fontSize: '14px', color: '#2563eb', fontWeight: 800 }}>{msg.payload.department || 'Khoa đề xuất'}</div>
+                            <div className="doctor-reco-advice" style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>{msg.text}</div>
+                          </div>
+                        </div>
+
+                        <div className="doctor-list">
+                          {Array.isArray(msg.payload.doctors) && msg.payload.doctors.length > 0 ? msg.payload.doctors.map(d => (
+                            <div key={d.id} className="doctor-card">
+                              <div className="doctor-card-left">
+                                <div className="doctor-name">{d.fullName}</div>
+                                <div className="doctor-meta">{d.specialization} · {d.experienceYears} năm kinh nghiệm</div>
+                                <div className="doctor-dept">{d.departmentName}</div>
+                              </div>
+                              <div className="doctor-card-right">
+                                <a href={`mailto:${d.email}`} className="doctor-contact">Liên hệ</a>
+                              </div>
+                            </div>
+                          )) : (
+                            <div className="ai-chat-bubble">{msg.text}</div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="ai-chat-bubble">
+                        {msg.text}
+                      </div>
+                    )}
                   </div>
                 ))}
+                {isAiLoading && (
+                  <div className="ai-chat-message bot">
+                    <div className="ai-chat-bubble ai-typing">
+                      <span>AI đang nhắn...</span>
+                      <span className="typing-indicator">
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+              <form onSubmit={handleSendMessage} className="ai-chat-form">
                 <input
+                  ref={chatInputRef}
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Nhập câu hỏi hoặc triệu chứng..."
-                  disabled={isAiLoading}
-                  style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none', opacity: isAiLoading ? 0.7 : 1 }}
+                  autoComplete="off"
+                  className="ai-chat-input"
                 />
                 <button
                   type="submit"
                   disabled={isAiLoading}
-                  style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', background: isAiLoading ? '#94a3b8' : '#2563eb', color: '#fff', cursor: isAiLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
+                  className="ai-chat-send"
                 >
-                  {isAiLoading ? 'Đang gửi...' : 'Gửi'}
+                  {isAiLoading ? 'Đang nhắn...' : 'Gửi'}
                 </button>
               </form>
             </section>
@@ -342,16 +395,30 @@ const handleCancelAppointment = async (id) => {
                   <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Biểu đồ thống kê sức khỏe theo tháng.</p>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '180px', marginTop: '12px' }}>
-                {trendData.map(item => (
-                  <div key={item.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '100%', height: `${item.value}px`, minHeight: '40px', background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 100%)', borderRadius: '10px 10px 4px 4px' }} />
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>{item.label}</span>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                {trendData.map(item => {
+                  const change = item.current - item.previous;
+                  const pct = Math.round((change / (item.previous || 1)) * 100);
+                  const isUp = change > 0;
+                  const severity = isUp && pct >= 20 ? 'high' : isUp && pct >= 10 ? 'medium' : isUp ? 'low' : 'low';
+                  return (
+                    <div key={item.label} className="trend-row">
+                      <div className="trend-left">
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <div className="trend-label">{item.label}</div>
+                          <div className="trend-count">{item.current} ca</div>
+                        </div>
+                        <div className={`trend-delta ${isUp ? 'up' : 'down'}`}>{isUp ? `▲ +${pct}%` : `▼ ${Math.abs(pct)}%`}</div>
+                      </div>
+                      <div className="trend-bar-bg">
+                        <div className="trend-bar-fill" style={{ width: `${Math.min(100, Math.max(6, (item.current/ (item.current+item.previous) * 100) ))}%`, background: isUp ? (severity === 'high' ? 'linear-gradient(90deg,#ef4444,#fb7185)' : severity === 'medium' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#60a5fa,#2563eb)') : 'linear-gradient(90deg,#60a5fa,#2563eb)' }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <div style={{ marginTop: '12px', fontSize: '13px', color: '#64748b' }}>
-                Dữ liệu đang được cập nhật theo lịch khám gần đây.
+                Dữ liệu xu hướng bệnh — các mục có màu đỏ là mức nguy hiểm cao.
               </div>
             </section>
           </div>
