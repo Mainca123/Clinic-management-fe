@@ -295,7 +295,7 @@ const handleCancelAppointment = async (id) => {
 
   return (
     <div className="dashboard-container">
-      <Sidebar handleLogout={handleLogout} setIsDrugModalOpen={setIsDrugModalOpen} setIsDeptModalOpen={setIsDeptModalOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar handleLogout={handleLogout} activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className="main-content">
         <Header user={user} />
@@ -322,6 +322,50 @@ const handleCancelAppointment = async (id) => {
                 <TrendCard />
               </div>
             </>
+          )}
+
+          {activeTab === 'appointments' && (
+            <div className="admin-card" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+              <div className="card-header">
+                <h2><span>📅</span> Danh sách lịch hẹn</h2>
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
+                {isLoadingAppointments ? (
+                  <p style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Đang tải dữ liệu...</p>
+                ) : appointments.length > 0 ? (
+                  <table className="data-table" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Bệnh nhân</th>
+                        <th>Ngày khám</th>
+                        <th>Giờ</th>
+                        <th>Triệu chứng</th>
+                        <th>Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {appointments.map(appt => (
+                        <tr key={appt.id}>
+                          <td>#{appt.id}</td>
+                          <td><strong>{appt.patientName || 'Chưa rõ'}</strong></td>
+                          <td>{appt.appointmentDate}</td>
+                          <td>{appt.startTime}</td>
+                          <td style={{ color: '#64748b', fontSize: '13px' }}>{appt.symptoms || appt.reason || appt.description || 'Không có ghi chú'}</td>
+                          <td>
+                            <span className={`status-badge ${appt.status === 'PENDING' ? 'pending' : appt.status === 'CANCELLED' ? 'cancelled' : 'confirmed'}`}>
+                              {appt.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>📭 Chưa có lịch hẹn nào.</p>
+                )}
+              </div>
+            </div>
           )}
 
           {activeTab === 'patients' && (
