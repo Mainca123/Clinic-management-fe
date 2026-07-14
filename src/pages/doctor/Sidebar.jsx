@@ -22,7 +22,7 @@ const Sidebar = ({ handleLogout, activeTab, setActiveTab }) => {
           <span className="icon"> 👤 </span> Bệnh nhân
         </Link>
 
-        <Link to="#" className="nav-item">
+        <Link to="#" className={`nav-item ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
           <span className="icon"> 📈 </span> Thống kê
         </Link>
       </nav>
