@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 
-const AppointmentSection = ({ setIsModalOpen, isLoadingAppointments, appointments, handleViewAppointmentDetails, handleCancelAppointment, handlePatientDeleteAppointment, handleViewMedicalRecord, handleViewOwnHistory }) => {
+const AppointmentSection = ({ setIsModalOpen, isLoadingAppointments, appointments, handleViewAppointmentDetails, handleCancelAppointment, handleViewOwnHistory }) => {
   const [searchRecordId, setSearchRecordId] = useState('');
+
+  const canCancel = (appt) => {
+    if (appt.status === 'CANCELLED') return false;
+    const apptDate = new Date(appt.appointmentDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((apptDate - today) / (1000 * 60 * 60 * 24));
+    return diffDays >= 1;
+  };
 
   return (
     <div className="appointments-section">
       <div className="section-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
         <h2>Lịch hẹn của bạn</h2>
-        
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Đặt lịch khám</button>
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>+ Đặt lịch khám</button>
         </div>
       </div>
       <div className="appointment-list">
@@ -30,17 +37,19 @@ const AppointmentSection = ({ setIsModalOpen, isLoadingAppointments, appointment
                 <span className="appointment-time"> ⏰ {appt.appointmentDate} | {appt.startTime}</span>
                 <span className={`status-badge ${appt.status === 'PENDING' ? 'pending' : (appt.status === 'CANCELLED' ? 'cancelled' : 'confirmed')}`}>{appt.status || 'Đang diễn ra'}</span>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn-primary" onClick={() => handleViewAppointmentDetails(appt.id)} style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '14px' }}>Chi tiết</button>
-                {appt.status !== 'CANCELLED' && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button onClick={() => handleViewAppointmentDetails(appt.id)} style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>Chi tiết</button>
+                {canCancel(appt) ? (
                   <button className="btn-cancel" onClick={() => handleCancelAppointment(appt.id)}>Hủy lịch</button>
-                )}
+                ) : appt.status !== 'CANCELLED' ? (
+                  <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>Không thể hủy</span>
+                ) : null}
               </div>
             </div>
           ))
         ) : (
           <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
-            <p>Bạn chưa có lịch hẹn nào. Hãy ấn <strong>+ Đặt lịch nhanh</strong> để bắt đầu!</p>
+            <p>Bạn chưa có lịch hẹn nào. Hãy ấn <strong>+ Đặt lịch khám</strong> để bắt đầu!</p>
           </div>
         )}
       </div>
@@ -48,4 +57,4 @@ const AppointmentSection = ({ setIsModalOpen, isLoadingAppointments, appointment
   );
 };
 
-export default AppointmentSection;
+export default AppointmentSection;
