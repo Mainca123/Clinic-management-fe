@@ -126,18 +126,14 @@ const PatientDrugPrice = () => {
           user={user}
         />
         <div className="page-content">
-          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <section style={{ background: '#fff', borderRadius: '14px', padding: '18px', boxShadow: '0 8px 20px rgba(15, 23, 42, 0.06)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ margin: 0, color: '#0f172a' }}>💊 Danh sách thuốc</h3>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>{filteredDrugs.length} loại</span>
-              </div>
-
+              <h3 style={{ marginTop: 0, color: '#0f172a' }}>💊 Tra cứu giá thuốc</h3>
               <input
                 type="text"
-                placeholder="Tìm thuốc theo tên hoặc thành phần..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Nhập tên thuốc hoặc thành phần..."
+                value={drugSearchTerm}
+                onChange={(e) => setDrugSearchTerm(e.target.value)}
                 style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', marginBottom: '12px', boxSizing: 'border-box' }}
               />
 
@@ -183,14 +179,14 @@ const PatientDrugPrice = () => {
       {isDrugModalOpen && selectedDrug && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 13000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '420px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>💊 {selectedDrug.name}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>💊 {selectedDrug.name}</h3>
+              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <p style={{ margin: 0 }}><strong>Giá:</strong> <span style={{ color: '#0f6eff', fontWeight: 'bold' }}>{selectedDrug.price?.toLocaleString()}đ</span></p>
             <p style={{ margin: 0 }}><strong>Đơn vị:</strong> {selectedDrug.unit || 'Chưa cập nhật'}</p>
             <p style={{ margin: 0 }}><strong>Thành phần:</strong> {selectedDrug.ingredient || 'Đang cập nhật'}</p>
             <p style={{ margin: 0 }}><strong>Hướng dẫn sử dụng:</strong> {selectedDrug.usageInstruction || 'Đang cập nhật'}</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng</button>
-            </div>
           </div>
         </div>
       )}

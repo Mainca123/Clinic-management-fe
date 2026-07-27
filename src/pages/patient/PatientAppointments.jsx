@@ -43,6 +43,42 @@ const PatientAppointments = () => {
   const [historyRecords, setHistoryRecords] = useState([]);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
+  // ===== WIZARD STATE =====
+  const [wStep, setWStep] = useState(1);
+  const [wDept, setWDept] = useState(null);
+  const [wDoctor, setWDoctor] = useState(null);
+  const [wDate, setWDate] = useState('');
+  const [wTime, setWTime] = useState('');
+  const [wSymptoms, setWSymptoms] = useState('');
+  const [wBookedSlots, setWBookedSlots] = useState([]);
+  const [wDone, setWDone] = useState(false);
+
+  // 18 khung giờ làm việc 7h-17h
+  const ALL_TIME_SLOTS = [
+    '07:00','07:30','08:00','08:30','09:00','09:30',
+    '10:00','10:30','11:00','11:30',
+    '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30'
+  ];
+
+  const resetWizard = () => {
+    setWStep(1); setWDept(null); setWDoctor(null);
+    setWDate(''); setWTime(''); setWSymptoms('');
+    setWBookedSlots([]); setWDone(false);
+  };
+
+  // Lấy slot đã đặt của bác sĩ theo ngày từ danh sách appointments đã tải
+  // doctor_id trong appointments = doctors.id (bảng doctors, KHÔNG phải users.id)
+  const computeBookedSlots = (doctorId, date) => {
+    const taken = appointments
+      .filter(a =>
+        String(a.doctorId) === String(doctorId) &&
+        a.appointmentDate === date &&
+        a.status !== 'CANCELLED'
+      )
+      .map(a => (a.startTime || '').slice(0, 5));
+    setWBookedSlots(taken);
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -185,20 +221,20 @@ const PatientAppointments = () => {
 
   const handleCreateAppointment = async () => {
     try {
-      const symptomValue = formData.symptoms || 'Kiểm tra sức khỏe';
+      const symptomValue = wSymptoms || 'Kiểm tra sức khỏe';
+      // doctorId = doctors.id (bảng doctors trong DB), KHÔNG phải users.id
       await createAppointmentAPI({
         patientId: user?.id || user?.userId || 0,
-        doctorId: parseInt(formData.doctorId),
-        appointmentDate: formData.appointmentDate,
-        startTime: formData.startTime.length === 5 ? formData.startTime + ':00' : formData.startTime,
+        doctorId: parseInt(wDoctor.id),
+        appointmentDate: wDate,
+        startTime: wTime + ':00',
         symptoms: symptomValue,
         symptom: symptomValue,
         reason: symptomValue,
         description: symptomValue
       });
-      alert('🎉 Đặt lịch hẹn thành công!');
-      setIsModalOpen(false);
-      setFormData({});
+      setWDone(true);
+      setWStep(5);
       fetchAppointmentsAndDepartments();
     } catch (error) {
       alert('Đặt lịch thất bại. Vui lòng kiểm tra lại thông tin!');
@@ -267,7 +303,10 @@ const PatientAppointments = () => {
       {isDrugModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 12000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>💊 Bảng giá thuốc niêm yết</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>💊 Bảng giá thuốc niêm yết</h3>
+              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {drugs.length > 0 ? drugs.map(d => (
                 <div key={d.id} style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -281,41 +320,242 @@ const PatientAppointments = () => {
                 <p>Chưa có dữ liệu thuốc!</p>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '8px 20px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Đóng lại</button>
-            </div>
           </div>
         </div>
       )}
 
-      {isModalOpen && (
-        <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '400px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a' }}>➕ Đặt lịch khám mới</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Vui lòng chọn bác sĩ và thời gian bạn muốn khám.</p>
-            <select value={formData.doctorId || ''} onChange={e => setFormData({ ...formData, doctorId: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required>
-              <option value="" disabled>-- Vui lòng chọn Bác sĩ --</option>
-              {doctorList.map(doc => (
-                <option key={doc.id || doc.userId} value={doc.id || doc.userId}>
-                  BS. {doc.fullName || doc.name} {doc.specialization ? `(${doc.specialization})` : ''}
-                </option>
-              ))}
-            </select>
-            <input type="date" value={formData.appointmentDate || ''} onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="time" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="text" placeholder="Triệu chứng/Lý do" value={formData.symptoms || ''} onChange={e => setFormData({ ...formData, symptoms: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-              <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
-              <button onClick={handleCreateAppointment} style={{ padding: '8px 16px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Xác nhận Đặt lịch</button>
+      {isModalOpen && (() => {
+        const step = wStep;
+        const LABELS = ['Chọn khoa', 'Chọn bác sĩ', 'Chọn lịch', 'Xác nhận'];
+        const doctorsInDept = wDept
+          ? doctorList.filter(d => String(d.departmentId || d.department_id) === String(wDept.id))
+          : doctorList;
+
+        return (
+          <div style={{ display:'flex', position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(15,23,42,0.65)', justifyContent:'center', alignItems:'center', zIndex:2000 }}>
+            <div style={{ backgroundColor:'#fff', borderRadius:'20px', width:'560px', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 30px 90px rgba(0,0,0,0.35)', display:'flex', flexDirection:'column' }}>
+
+              {/* ── HEADER ── */}
+              <div style={{ padding:'22px 26px 14px', borderBottom:'1px solid #f1f5f9', position:'sticky', top:0, background:'#fff', zIndex:10, borderRadius:'20px 20px 0 0' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'18px' }}>
+                  <h3 style={{ margin:0, fontSize:'19px', fontWeight:'800', color:'#0f172a' }}>🗓️ Đặt lịch khám mới</h3>
+                  <button onClick={() => { setIsModalOpen(false); resetWizard(); }}
+                    style={{ background:'#f1f5f9', border:'1px solid #cbd5e1', borderRadius:'8px', padding:'6px 12px', cursor:'pointer', fontSize:'13px', color:'#334155', fontWeight:'600' }}>← Quay lại</button>
+                </div>
+                {/* Step bar */}
+                {step <= 4 && (
+                  <div style={{ display:'flex', alignItems:'center' }}>
+                    {LABELS.map((label, i) => (
+                      <React.Fragment key={i}>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', flex:1 }}>
+                          <div style={{ width:'28px', height:'28px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'800',
+                            background: step > i+1 ? '#10b981' : step === i+1 ? '#0f6eff' : '#e2e8f0',
+                            color: step >= i+1 ? '#fff' : '#94a3b8', transition:'all 0.2s' }}>
+                            {step > i+1 ? '✓' : i+1}
+                          </div>
+                          <span style={{ fontSize:'10px', marginTop:'4px', fontWeight: step===i+1?'700':'400',
+                            color: step===i+1?'#0f6eff': step>i+1?'#10b981':'#94a3b8' }}>{label}</span>
+                        </div>
+                        {i < 3 && <div style={{ flex:0.5, height:'2px', background: step>i+1?'#10b981':'#e2e8f0', marginBottom:'16px', borderRadius:'2px', transition:'all 0.3s' }} />}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── CONTENT ── */}
+              <div style={{ padding:'24px 26px', flex:1 }}>
+
+                {/* BƯỚC 1 – Chọn khoa */}
+                {step === 1 && (
+                  <div>
+                    <p style={{ margin:'0 0 14px', color:'#64748b', fontSize:'13px' }}>Chọn khoa chuyên môn phù hợp với tình trạng của bạn:</p>
+                    {departments.length === 0
+                      ? <p style={{ textAlign:'center', color:'#94a3b8' }}>⏳ Đang tải danh sách khoa...</p>
+                      : <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+                          {departments.map(dept => {
+                            const id = dept.id || dept.departmentId;
+                            const name = dept.name || dept.departmentName;
+                            const sel = wDept?.id === id;
+                            return (
+                              <div key={id} onClick={() => setWDept({ id, name, description: dept.description })}
+                                style={{ padding:'14px 16px', border:`2px solid ${sel?'#0f6eff':'#e2e8f0'}`,
+                                  borderRadius:'12px', cursor:'pointer', transition:'all 0.15s',
+                                  background: sel?'#eff6ff':'#fff',
+                                  boxShadow: sel?'0 0 0 3px rgba(15,110,255,0.12)':'none' }}>
+                                <div style={{ fontWeight:'700', fontSize:'13px', color: sel?'#0f6eff':'#0f172a' }}>🏥 {name}</div>
+                                {dept.description && <div style={{ fontSize:'11px', color:'#64748b', marginTop:'4px', lineHeight:'1.4' }}>{dept.description}</div>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                    }
+                  </div>
+                )}
+
+                {/* BƯỚC 2 – Chọn bác sĩ */}
+                {step === 2 && (
+                  <div>
+                    <p style={{ margin:'0 0 14px', color:'#64748b', fontSize:'13px' }}>
+                      Bác sĩ thuộc khoa <strong style={{ color:'#0f6eff' }}>{wDept?.name}</strong>:
+                    </p>
+                    {doctorsInDept.length === 0
+                      ? <div style={{ textAlign:'center', padding:'30px', color:'#94a3b8' }}>
+                          <div style={{ fontSize:'36px' }}>👨‍⚕️</div>
+                          <p style={{ margin:'8px 0 0' }}>Khoa này chưa có bác sĩ được phân công.</p>
+                        </div>
+                      : <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                          {doctorsInDept.map(doc => {
+                            const id = doc.id || doc.doctorId;
+                            const name = doc.fullName || doc.name;
+                            const sel = wDoctor?.id === id;
+                            return (
+                              <div key={id} onClick={() => setWDoctor({ id, fullName: name, specialization: doc.specialization, experienceYears: doc.experienceYears })}
+                                style={{ display:'flex', alignItems:'center', gap:'14px', padding:'14px 16px',
+                                  border:`2px solid ${sel?'#0f6eff':'#e2e8f0'}`,
+                                  borderRadius:'12px', cursor:'pointer',
+                                  background: sel?'#eff6ff':'#fff',
+                                  boxShadow: sel?'0 0 0 3px rgba(15,110,255,0.12)':'none',
+                                  transition:'all 0.15s' }}>
+                                <img src={`https://api.dicebear.com/8.x/avataaars/svg?seed=doctor${id}&backgroundColor=b6e3f4`}
+                                  style={{ width:'50px', height:'50px', borderRadius:'50%', border:'2px solid #e2e8f0', flexShrink:0 }} alt="" />
+                                <div style={{ flex:1 }}>
+                                  <div style={{ fontWeight:'700', fontSize:'15px', color: sel?'#0f6eff':'#0f172a' }}>BS. {name}</div>
+                                  <div style={{ fontSize:'12px', color:'#64748b', marginTop:'3px' }}>
+                                    🔬 {doc.specialization || 'Đa khoa'}
+                                    {doc.experienceYears && <span style={{ marginLeft:'12px' }}>⭐ {doc.experienceYears} năm kinh nghiệm</span>}
+                                  </div>
+                                </div>
+                                {sel && <span style={{ color:'#0f6eff', fontSize:'20px', fontWeight:'bold' }}>✓</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                    }
+                  </div>
+                )}
+
+                {/* BƯỚC 3 – Chọn ngày & giờ */}
+                {step === 3 && (
+                  <div>
+                    <div style={{ marginBottom:'20px' }}>
+                      <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'8px' }}>📅 Chọn ngày khám:</label>
+                      <input type="date"
+                        min={new Date(Date.now()+86400000).toISOString().split('T')[0]}
+                        value={wDate}
+                        onChange={e => { setWDate(e.target.value); setWTime(''); computeBookedSlots(wDoctor?.id, e.target.value); }}
+                        style={{ width:'100%', padding:'12px 14px', border:'2px solid #e2e8f0', borderRadius:'10px', fontSize:'15px', boxSizing:'border-box', outline:'none' }} />
+                    </div>
+
+                    {wDate && (
+                      <div style={{ marginBottom:'20px' }}>
+                        <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'10px' }}>⏰ Chọn khung giờ:</label>
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'8px' }}>
+                          {ALL_TIME_SLOTS.map(slot => {
+                            const booked = wBookedSlots.includes(slot);
+                            const sel = wTime === slot;
+                            return (
+                              <button key={slot} disabled={booked} onClick={() => !booked && setWTime(slot)}
+                                style={{ padding:'10px 4px', borderRadius:'10px', border:`2px solid ${sel?'#0f6eff':booked?'#fecaca':'#e2e8f0'}`,
+                                  background: sel?'#0f6eff':booked?'#fef2f2':'#fff',
+                                  color: sel?'#fff':booked?'#ef4444':'#334155',
+                                  fontSize:'13px', fontWeight:'600', cursor: booked?'not-allowed':'pointer',
+                                  transition:'all 0.1s' }}>
+                                {slot}
+                                {booked && <div style={{ fontSize:'9px', marginTop:'1px', opacity:0.8 }}>Đã đặt</div>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div style={{ display:'flex', gap:'14px', marginTop:'10px', fontSize:'11px', color:'#94a3b8' }}>
+                          <span>🟦 Đang chọn</span>
+                          <span style={{ color:'#ef4444' }}>🟥 Đã đặt</span>
+                          <span>⬜ Còn trống</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'8px' }}>📝 Triệu chứng / Lý do khám:</label>
+                      <textarea value={wSymptoms} onChange={e => setWSymptoms(e.target.value)}
+                        placeholder="Mô tả triệu chứng hoặc lý do khám của bạn..."
+                        style={{ width:'100%', padding:'12px', border:'2px solid #e2e8f0', borderRadius:'10px', boxSizing:'border-box', minHeight:'75px', fontSize:'13px', resize:'vertical', outline:'none', fontFamily:'inherit' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* BƯỚC 4 – Xác nhận */}
+                {step === 4 && (
+                  <div>
+                    <div style={{ background:'linear-gradient(135deg,#eff6ff,#f0fdf4)', borderRadius:'14px', padding:'20px', border:'1px solid #bfdbfe', marginBottom:'14px' }}>
+                      <h4 style={{ margin:'0 0 14px', color:'#0f172a', fontSize:'15px' }}>✅ Thông tin lịch khám của bạn</h4>
+                      <div style={{ display:'grid', gridTemplateColumns:'auto 1fr', gap:'9px 18px', fontSize:'14px' }}>
+                        <span style={{ color:'#64748b', fontWeight:'600' }}>🏥 Khoa:</span>
+                        <strong style={{ color:'#0f172a' }}>{wDept?.name}</strong>
+                        <span style={{ color:'#64748b', fontWeight:'600' }}>👨‍⚕️ Bác sĩ:</span>
+                        <strong style={{ color:'#0f172a' }}>BS. {wDoctor?.fullName}</strong>
+                        <span style={{ color:'#64748b', fontWeight:'600' }}>🔬 Chuyên khoa:</span>
+                        <span style={{ color:'#334155' }}>{wDoctor?.specialization || 'Đa khoa'}</span>
+                        <span style={{ color:'#64748b', fontWeight:'600' }}>📅 Ngày khám:</span>
+                        <strong style={{ color:'#0f6eff' }}>{wDate}</strong>
+                        <span style={{ color:'#64748b', fontWeight:'600' }}>⏰ Giờ khám:</span>
+                        <strong style={{ color:'#0f6eff' }}>{wTime}</strong>
+                        {wSymptoms && <><span style={{ color:'#64748b', fontWeight:'600' }}>📝 Triệu chứng:</span><span style={{ color:'#334155' }}>{wSymptoms}</span></>}
+                      </div>
+                    </div>
+                    <p style={{ margin:0, fontSize:'12px', color:'#94a3b8', textAlign:'center' }}>Kiểm tra lại thông tin và bấm <strong>"Xác nhận đặt lịch"</strong> để hoàn tất.</p>
+                  </div>
+                )}
+
+                {/* BƯỚC 5 – Thành công */}
+                {step === 5 && (
+                  <div style={{ textAlign:'center', padding:'16px 0' }}>
+                    <div style={{ fontSize:'60px', marginBottom:'14px' }}>🎉</div>
+                    <h3 style={{ margin:'0 0 10px', color:'#10b981', fontSize:'22px', fontWeight:'800' }}>Đặt lịch thành công!</h3>
+                    <p style={{ color:'#64748b', fontSize:'14px', lineHeight:'1.7', margin:'0 0 20px' }}>
+                      Lịch hẹn với <strong>BS. {wDoctor?.fullName}</strong><br />
+                      vào <strong style={{ color:'#0f6eff' }}>{wDate}</strong> lúc <strong style={{ color:'#0f6eff' }}>{wTime}</strong><br />
+                      đã được ghi nhận thành công.
+                    </p>
+                    <p style={{ fontSize:'12px', color:'#94a3b8', margin:0 }}>Vui lòng đến đúng giờ và mang theo CMND/CCCD.</p>
+                    <button onClick={() => { setIsModalOpen(false); resetWizard(); }}
+                      style={{ marginTop:'20px', padding:'12px 36px', background:'#10b981', color:'#fff', border:'none', borderRadius:'10px', fontSize:'15px', fontWeight:'700', cursor:'pointer' }}>
+                      Xem lịch hẹn của tôi
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ── FOOTER BUTTONS ── */}
+              {step <= 4 && (
+                <div style={{ padding:'16px 26px', borderTop:'1px solid #f1f5f9', display:'flex', justifyContent:'flex-end', position:'sticky', bottom:0, background:'#fff', borderRadius:'0 0 20px 20px' }}>
+                  {step < 4
+                    ? <button
+                        disabled={(step===1&&!wDept)||(step===2&&!wDoctor)||(step===3&&(!wDate||!wTime))}
+                        onClick={() => setWStep(step+1)}
+                        style={{ padding:'10px 26px', background:'#0f6eff', color:'#fff', border:'none', borderRadius:'10px', cursor:'pointer', fontWeight:'700', fontSize:'14px',
+                          opacity:((step===1&&!wDept)||(step===2&&!wDoctor)||(step===3&&(!wDate||!wTime)))?0.35:1, transition:'opacity 0.2s' }}>
+                        Tiếp theo →
+                      </button>
+                    : <button onClick={handleCreateAppointment}
+                        style={{ padding:'10px 26px', background:'#10b981', color:'#fff', border:'none', borderRadius:'10px', cursor:'pointer', fontWeight:'700', fontSize:'14px' }}>
+                        🎉 Xác nhận đặt lịch
+                      </button>
+                  }
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {isApptDetailModalOpen && apptDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 11000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '400px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>📄 Chi tiết lịch khám #{apptDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>📄 Chi tiết lịch khám #{apptDetails.id}</h3>
+              <button onClick={() => setIsApptDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
               <p style={{ margin: 0 }}><strong>👨‍⚕️ Bác sĩ điều trị:</strong> {apptDetails.doctorName || 'Chưa cập nhật'}</p>
               <p style={{ margin: 0 }}><strong>👤 Bệnh nhân:</strong> {apptDetails.patientName || 'Chưa cập nhật'}</p>
@@ -324,9 +564,6 @@ const PatientAppointments = () => {
               <p style={{ margin: 0 }}><strong>⚠️ Triệu chứng:</strong> {apptDetails?.symptoms || apptDetails?.symptom || apptDetails?.reason || apptDetails?.note || apptDetails?.description || 'Không có ghi chú'}</p>
               <p style={{ margin: 0 }}><strong>📌 Trạng thái lịch:</strong> <span className={`status-badge ${apptDetails.status === 'PENDING' ? 'pending' : (apptDetails.status === 'CANCELLED' ? 'cancelled' : 'confirmed')}`}>{apptDetails.status}</span></p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsApptDetailModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
-            </div>
           </div>
         </div>
       )}
@@ -334,7 +571,10 @@ const PatientAppointments = () => {
       {isRecordDetailModalOpen && recordDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 15000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '500px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+              <button onClick={() => setIsRecordDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
               <p style={{ margin: 0 }}><strong>Mã Lịch hẹn:</strong> #{recordDetails.appointmentID || recordDetails.appointmentId || 'Chưa rõ'}</p>
               <p style={{ margin: 0 }}><strong>Chẩn đoán:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{recordDetails.diagnosis}</span></p>
@@ -357,9 +597,6 @@ const PatientAppointments = () => {
                 <p style={{ margin: 0, fontStyle: 'italic', color: '#64748b' }}>Không có đơn thuốc nào được kê.</p>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsRecordDetailModalOpen(false)} style={{ padding: '8px 20px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
-            </div>
           </div>
         </div>
       )}
@@ -367,7 +604,10 @@ const PatientAppointments = () => {
       {isHistoryModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 16000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '650px', maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>📒 Sổ Khám Bệnh Điện Tử Của Bạn</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#2563eb' }}>📒 Sổ Khám Bệnh Điện Tử Của Bạn</h3>
+              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
               {historyRecords.length > 0 ? historyRecords.map((rec) => (
                 <div key={rec.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>
@@ -392,9 +632,6 @@ const PatientAppointments = () => {
                 <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>📭 Hồ sơ bệnh án điện tử của bạn hiện chưa có dữ liệu nào trên máy chủ.</div>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '10px 24px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng sổ khám</button>
-            </div>
           </div>
         </div>
       )}
@@ -402,13 +639,13 @@ const PatientAppointments = () => {
       {isDrugDetailModalOpen && drugDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 13000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '350px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>💊 Thông tin chi tiết thuốc</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>💊 Thông tin chi tiết thuốc</h3>
+              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
               <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{ color: '#0f6eff', fontWeight: 'bold' }}>{drugDetails.name}</span></p>
               <p style={{ margin: 0 }}><strong>Đơn vị tính:</strong> {drugDetails.unit || 'Chưa cập nhật'}</p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
             </div>
           </div>
         </div>

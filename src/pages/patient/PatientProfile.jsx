@@ -138,7 +138,7 @@ const PatientProfile = () => {
 
       {/* MAIN CONTENT */}
       <main className="main-content">
-        <header className="main-header" style={{ paddingBottom: '20px' }}>
+        <header className="main-header" style={{ paddingBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: 'var(--text-main)', margin: 0, fontSize: '1.5rem' }}>Thiết Lập Hồ Sơ</h2>
         </header>
 
@@ -211,12 +211,9 @@ const PatientProfile = () => {
                 </div>
               </div>
 
-              <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
+              <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
                 <button type="submit" disabled={loading} style={{ padding: '12px 32px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s', opacity: loading ? 0.7 : 1 }}>
                   {loading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                </button>
-                <button type="button" onClick={() => navigate('/patient/dashboard')} style={{ padding: '12px 32px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>
-                  Quay lại
                 </button>
               </div>
             </form>

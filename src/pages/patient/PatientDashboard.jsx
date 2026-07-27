@@ -50,7 +50,7 @@ const PatientDashboard = () => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const chatBoxRef = useRef(null);
   const chatInputRef = useRef(null);
-  
+
   useEffect(() => {
     chatInputRef.current?.focus();
   }, []);
@@ -72,8 +72,8 @@ const PatientDashboard = () => {
     };
     fetchUserData();
   }, []);
-  
-const fetchAppointmentsAndDepartments = async () => {
+
+  const fetchAppointmentsAndDepartments = async () => {
     setIsLoadingAppointments(true);
     try {
       // 1. TẢI VÀ SẮP XẾP LỊCH HẸN THEO THỜI GIAN
@@ -83,7 +83,7 @@ const fetchAppointmentsAndDepartments = async () => {
       apptList.sort((a, b) => {
         const dateA = new Date(`${a.appointmentDate}T${a.startTime}`);
         const dateB = new Date(`${b.appointmentDate}T${b.startTime}`);
-        return dateA - dateB; 
+        return dateA - dateB;
       });
       setAppointments(apptList);
 
@@ -107,10 +107,10 @@ const fetchAppointmentsAndDepartments = async () => {
       setIsLoadingAppointments(false);
     }
   };
-  
+
 
   useEffect(() => { fetchAppointmentsAndDepartments(); }, []);
-  
+
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchTerm.trim() !== '') {
@@ -127,7 +127,7 @@ const fetchAppointmentsAndDepartments = async () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
-  
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -143,14 +143,14 @@ const fetchAppointmentsAndDepartments = async () => {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   }, [chatMessages, isAiLoading]);
-  
+
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem('token');
     alert('Đăng xuất khỏi MediPro. Hẹn gặp lại bạn!');
     navigate('/login');
   };
-  
+
   const handleViewDrugDetails = async (id) => {
     try {
       const response = await getDrugDetailsAPI(id);
@@ -160,7 +160,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Lỗi khi tải chi tiết thuốc!");
     }
   };
-  
+
   const handleViewAppointmentDetails = async (id) => {
     try {
       const response = await getAppointmentDetailsAPI(id);
@@ -170,7 +170,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Không tìm thấy thông tin chi tiết lịch khám!");
     }
   };
-  
+
   const handleViewMedicalRecord = async (id) => {
     if (!id) return alert("Vui lòng nhập ID Bệnh án!");
     try {
@@ -187,7 +187,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Không tìm thấy bệnh án!");
     }
   };
-  
+
   const handleViewOwnHistory = async () => {
     const myId = user?.id || user?.userId;
     if (!myId) return alert("Hệ thống chưa tải xong dữ liệu tài khoản của bạn, vui lòng đợi giây lát!");
@@ -200,7 +200,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Không thể tải sổ khám sức khỏe của bạn lúc này!");
     }
   };
-  
+
   const handleCreateAppointment = async () => {
     try {
       // 🚀 SỬA LỖI MẤT TRIỆU CHỨNG: Gửi "rải thảm" nhiều trường để Backend không thể bắt trượt
@@ -223,26 +223,26 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Đặt lịch thất bại. Vui lòng kiểm tra lại thông tin!");
     }
   };
-  
-const handleCancelAppointment = async (id) => {
+
+  const handleCancelAppointment = async (id) => {
     const reasonText = window.prompt("Lý do hủy lịch:");
     if (reasonText === null) return;
-    
-    try {
-        // Tự động tìm ID bệnh nhân của lịch hẹn này
-        const currentAppt = appointments.find(a => a.id === id);
-        const pId = currentAppt ? (currentAppt.patientId || currentAppt.userId) : null;
 
-        // Gọi API gửi ID lịch, ID bệnh nhân, lý do và tự động truyền "CANCELLED"
-        await cancelAppointmentAPI(id, pId, reasonText);
-        
-        alert("Đã hủy lịch thành công!");
-        fetchAppointmentsAndDepartments(); // Tải lại danh sách
-    } catch (error) { 
-        alert("Lỗi hủy lịch! Vui lòng kiểm tra lại URL API."); 
+    try {
+      // Tự động tìm ID bệnh nhân của lịch hẹn này
+      const currentAppt = appointments.find(a => a.id === id);
+      const pId = currentAppt ? (currentAppt.patientId || currentAppt.userId) : null;
+
+      // Gọi API gửi ID lịch, ID bệnh nhân, lý do và tự động truyền "CANCELLED"
+      await cancelAppointmentAPI(id, pId, reasonText);
+
+      alert("Đã hủy lịch thành công!");
+      fetchAppointmentsAndDepartments(); // Tải lại danh sách
+    } catch (error) {
+      alert("Lỗi hủy lịch! Vui lòng kiểm tra lại URL API.");
     }
   };
-  
+
   const handlePatientDeleteAppointment = async (id) => {
     if (window.confirm(" 🗑 ️ Bạn muốn xóa vĩnh viễn thẻ lịch hẹn này khỏi danh sách hiển thị không?")) {
       try {
@@ -298,7 +298,7 @@ const handleCancelAppointment = async (id) => {
     { label: 'Sốt', current: 62, previous: 58 },
     { label: 'Ho', current: 40, previous: 45 }
   ];
-  
+
   return (
     <div className="dashboard-container">
       <Sidebar handleLogout={handleLogout} setIsDrugModalOpen={setIsDrugModalOpen} />
@@ -411,7 +411,7 @@ const handleCancelAppointment = async (id) => {
                         <div className={`trend-delta ${isUp ? 'up' : 'down'}`}>{isUp ? `▲ +${pct}%` : `▼ ${Math.abs(pct)}%`}</div>
                       </div>
                       <div className="trend-bar-bg">
-                        <div className="trend-bar-fill" style={{ width: `${Math.min(100, Math.max(6, (item.current/ (item.current+item.previous) * 100) ))}%`, background: isUp ? (severity === 'high' ? 'linear-gradient(90deg,#ef4444,#fb7185)' : severity === 'medium' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#60a5fa,#2563eb)') : 'linear-gradient(90deg,#60a5fa,#2563eb)' }} />
+                        <div className="trend-bar-fill" style={{ width: `${Math.min(100, Math.max(6, (item.current / (item.current + item.previous) * 100)))}%`, background: isUp ? (severity === 'high' ? 'linear-gradient(90deg,#ef4444,#fb7185)' : severity === 'medium' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#60a5fa,#2563eb)') : 'linear-gradient(90deg,#60a5fa,#2563eb)' }} />
                       </div>
                     </div>
                   );
@@ -425,7 +425,7 @@ const handleCancelAppointment = async (id) => {
 
         </div>
       </main>
-      
+
       {/* 1. Modal Bảng Giá Thuốc */}
       {isDrugModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 12000 }}>
@@ -450,14 +450,14 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 2. Modal Đặt Lịch Khám */}
       {isModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '400px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: 0, color: '#0f172a' }}> ➕  Đặt lịch khám mới</h3>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Vui lòng chọn bác sĩ và thời gian bạn muốn khám.</p>
-            <select value={formData.doctorId || ''} onChange={e => setFormData({...formData, doctorId: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required>
+            <select value={formData.doctorId || ''} onChange={e => setFormData({ ...formData, doctorId: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required>
               <option value="" disabled>-- Vui lòng chọn Bác sĩ --</option>
               {doctorList.map(doc => (
                 <option key={doc.id || doc.userId} value={doc.id || doc.userId}>
@@ -465,9 +465,9 @@ const handleCancelAppointment = async (id) => {
                 </option>
               ))}
             </select>
-            <input type="date" value={formData.appointmentDate || ''} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="time" value={formData.startTime || ''} onChange={e => setFormData({...formData, startTime: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="text" placeholder="Triệu chứng/Lý do" value={formData.symptoms || ''} onChange={e => setFormData({...formData, symptoms: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} />
+            <input type="date" value={formData.appointmentDate || ''} onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
+            <input type="time" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
+            <input type="text" placeholder="Triệu chứng/Lý do" value={formData.symptoms || ''} onChange={e => setFormData({ ...formData, symptoms: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
               <button onClick={handleCreateAppointment} style={{ padding: '8px 16px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Xác nhận Đặt lịch</button>
@@ -475,7 +475,7 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 3. Modal Chi Tiết Lịch Khám */}
       {isApptDetailModalOpen && apptDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 11000 }}>
@@ -497,7 +497,7 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 4. Modal Xem Chi Tiết Bệnh Án (Lẻ) */}
       {isRecordDetailModalOpen && recordDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 15000 }}>
@@ -517,7 +517,7 @@ const handleCancelAppointment = async (id) => {
                   {recordDetails.prescriptionDetails.map((med, idx) => (
                     <li key={idx} style={{ color: '#334155' }}>
                       <strong style={{ color: '#0f6eff' }}>{med.medicineName}</strong> - Số lượng: <strong>{med.quantity}</strong> {med.unit}
-                      <br/><span style={{ fontSize: '13px', color: '#64748b' }}>Cách dùng: {med.dosage}</span>
+                      <br /><span style={{ fontSize: '13px', color: '#64748b' }}>Cách dùng: {med.dosage}</span>
                     </li>
                   ))}
                 </ul>
@@ -531,7 +531,7 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 5. Modal Xem Lịch Sử Sổ Khám Bệnh Nhân */}
       {isHistoryModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 16000 }}>
@@ -552,7 +552,7 @@ const handleCancelAppointment = async (id) => {
                     {rec.prescriptionDetails && rec.prescriptionDetails.length > 0 ? (
                       <ul style={{ margin: '5px 0 0 0', paddingLeft: '15px', fontSize: '13px' }}>
                         {rec.prescriptionDetails.map((med, idx) => (
-                          <li key={idx}>{med.medicineName} (Số lượng: {med.quantity} viên) - <span style={{color: '#64748b'}}>{med.dosage}</span></li>
+                          <li key={idx}>{med.medicineName} (Số lượng: {med.quantity} viên) - <span style={{ color: '#64748b' }}>{med.dosage}</span></li>
                         ))}
                       </ul>
                     ) : <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#94a3b8' }}> Không có đơn thuốc đi kèm.</span>}
@@ -568,14 +568,14 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 6. Modal Chi Tiết Thuốc */}
       {isDrugDetailModalOpen && drugDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 13000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '350px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}> 💊  Thông tin chi tiết thuốc</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
-              <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{color: '#0f6eff', fontWeight: 'bold'}}>{drugDetails.name}</span></p>
+              <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{ color: '#0f6eff', fontWeight: 'bold' }}>{drugDetails.name}</span></p>
               <p style={{ margin: 0 }}><strong>Đơn vị tính:</strong> {drugDetails.unit || 'Chưa cập nhật'}</p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
