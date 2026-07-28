@@ -456,7 +456,31 @@ const PatientDashboard = () => {
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '400px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: 0, color: '#0f172a' }}> ➕  Đặt lịch khám mới</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Vui lòng chọn bác sĩ và thời gian bạn muốn khám.</p>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Vui lòng chọn chuyên khoa, bác sĩ và thời gian bạn muốn khám.</p>
+            
+            <select
+              value={formData.departmentId || ''}
+              onChange={async (e) => {
+                const deptId = e.target.value;
+                setFormData(prev => ({ ...prev, departmentId: deptId, doctorId: '' }));
+                try {
+                  const responseDoc = await getAllDoctorsAPI(0, deptId);
+                  const docs = responseDoc.data?.data?.doctors || responseDoc.data?.data?.doctorList || responseDoc.data?.data?.content || responseDoc.data?.data || responseDoc.data || [];
+                  setDoctorList(Array.isArray(docs) ? docs : []);
+                } catch (err) {
+                  console.error('Lỗi khi lọc bác sĩ theo khoa:', err);
+                }
+              }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">-- Tất cả Chuyên khoa --</option>
+              {departments.map(dept => (
+                <option key={dept.id || dept.departmentId} value={dept.id || dept.departmentId}>
+                  🏥 {dept.name || dept.departmentName}
+                </option>
+              ))}
+            </select>
+
             <select value={formData.doctorId || ''} onChange={e => setFormData({ ...formData, doctorId: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required>
               <option value="" disabled>-- Vui lòng chọn Bác sĩ --</option>
               {doctorList.map(doc => (

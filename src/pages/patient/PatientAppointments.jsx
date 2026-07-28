@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCurrentUserAPI } from '../../services/authService';
 import { searchDoctorsAPI, getAllDoctorsAPI } from '../../services/adminService';
 import { getAllDepartmentsAPI } from '../../services/departmentService';
-import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI } from '../../services/appointmentService';
+import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI, getAppointmentsByDoctorAndDateAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, getDrugDetailsAPI } from '../../services/drugService';
 import { getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
 import '../../style/base.css';
@@ -11,6 +11,39 @@ import '../../style/patient.css';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AppointmentSection from './AppointmentSection';
+
+// DỮ LIỆU GIẢ LẬP TEST CHỨC NĂNG DỄ DÀNG KHI BACKEND CHƯA CÓ DỮ LIỆU
+const MOCK_DEPARTMENTS = [
+  { id: 1, name: 'Khoa Tim Mạch', description: 'Chuyên khoa sức khỏe tim mạch & huyết áp' },
+  { id: 2, name: 'Khoa Nội Tổng Quát', description: 'Chẩn đoán và điều trị bệnh lý nội khoa' },
+  { id: 3, name: 'Khoa Nhi', description: 'Chăm sóc & điều trị sức khỏe cho trẻ em' },
+  { id: 4, name: 'Khoa Ngoại Tổng Hợp', description: 'Phẫu thuật và can thiệp ngoại khoa' },
+  { id: 5, name: 'Khoa Mắt', description: 'Khám và điều trị các bệnh lý về nhãn khoa' },
+  { id: 6, name: 'Khoa Tai Mũi Họng', description: 'Chẩn đoán và điều trị Tai Mũi Họng' }
+];
+
+const MOCK_DOCTORS = [
+  { id: 101, fullName: 'BS. CKII. Nguyễn Văn An', departmentId: 1, specialization: 'Tim Mạch học', experienceYears: 15 },
+  { id: 102, fullName: 'ThS. BS. Trần Thị Bình', departmentId: 1, specialization: 'Huyết áp & Mạch máu', experienceYears: 10 },
+  { id: 103, fullName: 'BS. CKI. Lê Văn Cường', departmentId: 2, specialization: 'Nội tổng quát', experienceYears: 12 },
+  { id: 104, fullName: 'ThS. BS. Phạm Thị Dung', departmentId: 2, specialization: 'Tiêu hóa - Gan mật', experienceYears: 8 },
+  { id: 105, fullName: 'BS. CKII. Hoàng Văn Em', departmentId: 3, specialization: 'Nhi khoa tổng quát', experienceYears: 14 },
+  { id: 106, fullName: 'BS. CKI. Vũ Thị Giang', departmentId: 3, specialization: 'Tư vấn dinh dưỡng trẻ em', experienceYears: 7 },
+  { id: 107, fullName: 'TS. BS. Ngô Văn Hùng', departmentId: 4, specialization: 'Ngoại chấn thương', experienceYears: 18 },
+  { id: 108, fullName: 'BS. CKI. Đỗ Thị Hương', departmentId: 5, specialization: 'Nhãn khoa', experienceYears: 9 },
+  { id: 109, fullName: 'ThS. BS. Bùi Văn Khoa', departmentId: 6, specialization: 'Tai Mũi Họng', experienceYears: 11 }
+];
+
+// Ca bận mặc định cho việc test (BS 101, 102, 103...)
+const getMockBookedSlotsForDoctor = (doctorId) => {
+  const docIdNum = Number(doctorId);
+  if (docIdNum === 101) return ['08:00', '09:30', '14:00'];
+  if (docIdNum === 102) return ['08:30', '10:00', '15:00'];
+  if (docIdNum === 103) return ['07:30', '09:00', '13:30'];
+  if (docIdNum === 104) return ['08:00', '10:30', '16:00'];
+  if (docIdNum === 105) return ['07:00', '08:30', '14:30'];
+  return ['08:00', '13:30'];
+};
 
 const PatientAppointments = () => {
   const navigate = useNavigate();
@@ -30,6 +63,7 @@ const PatientAppointments = () => {
   const [departments, setDepartments] = useState([]);
   const [drugs, setDrugs] = useState([]);
   const [doctorList, setDoctorList] = useState([]);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isDrugModalOpen, setIsDrugModalOpen] = useState(false);
   const [drugDetails, setDrugDetails] = useState(null);
   const [isDrugDetailModalOpen, setIsDrugDetailModalOpen] = useState(false);
@@ -53,10 +87,10 @@ const PatientAppointments = () => {
   const [wBookedSlots, setWBookedSlots] = useState([]);
   const [wDone, setWDone] = useState(false);
 
-  // 18 khung giờ làm việc 7h-17h
+  // Các khung giờ làm việc 7h-17h (Mỗi ca cách nhau 30 phút, nghỉ trưa từ 11:30 - 13:00)
   const ALL_TIME_SLOTS = [
     '07:00','07:30','08:00','08:30','09:00','09:30',
-    '10:00','10:30','11:00','11:30',
+    '10:00','10:30','11:00',
     '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30'
   ];
 
@@ -66,18 +100,43 @@ const PatientAppointments = () => {
     setWBookedSlots([]); setWDone(false);
   };
 
-  // Lấy slot đã đặt của bác sĩ theo ngày từ danh sách appointments đã tải
-  // doctor_id trong appointments = doctors.id (bảng doctors, KHÔNG phải users.id)
-  const computeBookedSlots = (doctorId, date) => {
-    const taken = appointments
+  // Lấy slot đã đặt của bác sĩ theo ngày từ danh sách appointments và API
+  const computeBookedSlots = async (doctorId, date) => {
+    if (!doctorId || !date) {
+      setWBookedSlots([]);
+      return;
+    }
+    const localTaken = appointments
       .filter(a =>
-        String(a.doctorId) === String(doctorId) &&
+        (String(a.doctorId) === String(doctorId) || String(a.doctor_id) === String(doctorId)) &&
         a.appointmentDate === date &&
         a.status !== 'CANCELLED'
       )
       .map(a => (a.startTime || '').slice(0, 5));
-    setWBookedSlots(taken);
+
+    const mockTaken = getMockBookedSlotsForDoctor(doctorId);
+
+    let apiTaken = [];
+    try {
+      const response = await getAppointmentsByDoctorAndDateAPI(doctorId, date);
+      const apiAppts = Array.isArray(response.data?.data?.content || response.data?.data)
+        ? (response.data?.data?.content || response.data?.data)
+        : [];
+      apiTaken = apiAppts
+        .filter(a => a.status !== 'CANCELLED')
+        .map(a => (a.startTime || '').slice(0, 5));
+    } catch (error) {
+      // Dùng local/mock nếu API bị lỗi
+    }
+
+    setWBookedSlots(Array.from(new Set([...localTaken, ...mockTaken, ...apiTaken])));
   };
+
+  useEffect(() => {
+    if (wDoctor?.id && wDate) {
+      computeBookedSlots(wDoctor.id, wDate);
+    }
+  }, [wDoctor, wDate, appointments]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -108,16 +167,13 @@ const PatientAppointments = () => {
 
       const responseDept = await getAllDepartmentsAPI(0);
       const actualDeptArray = responseDept.data?.data?.departmentResponseList || responseDept.data?.departmentResponseList || responseDept.data?.data?.departments || responseDept.data?.data?.content || responseDept.data?.data || [];
-      setDepartments(Array.isArray(actualDeptArray) ? actualDeptArray : []);
+      setDepartments(Array.isArray(actualDeptArray) && actualDeptArray.length > 0 ? actualDeptArray : MOCK_DEPARTMENTS);
 
       const responseDrug = await getAllDrugsAPI(0, 100);
       setDrugs(Array.isArray(responseDrug.data?.data?.content || responseDrug.data?.data) ? (responseDrug.data?.data?.content || responseDrug.data?.data) : []);
-
-      const responseDoc = await getAllDoctorsAPI(0);
-      const docs = responseDoc.data?.data?.doctors || responseDoc.data?.data?.doctorList || responseDoc.data?.data?.content || responseDoc.data?.data || responseDoc.data || [];
-      setDoctorList(Array.isArray(docs) ? docs : []);
     } catch (error) {
-      console.error('Lỗi tải dữ liệu:', error);
+      console.error('Lỗi tải dữ liệu, sử dụng mock departments:', error);
+      setDepartments(MOCK_DEPARTMENTS);
     } finally {
       setIsLoadingAppointments(false);
     }
@@ -126,6 +182,32 @@ const PatientAppointments = () => {
   useEffect(() => {
     fetchAppointmentsAndDepartments();
   }, []);
+
+  // Tải danh sách bác sĩ theo ID khoa khi chọn khoa hoặc mở modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const fetchDoctorsForDept = async () => {
+      setIsLoadingDoctors(true);
+      const deptId = wDept ? wDept.id : null;
+      let docs = [];
+      try {
+        const responseDoc = await getAllDoctorsAPI(0, deptId);
+        docs = responseDoc.data?.data?.doctors || responseDoc.data?.data?.doctorList || responseDoc.data?.data?.content || responseDoc.data?.data || responseDoc.data || [];
+      } catch (error) {
+        console.error('Lỗi tải danh sách bác sĩ theo khoa, dùng mock doctors:', error);
+      }
+
+      if (!Array.isArray(docs) || docs.length === 0) {
+        docs = deptId
+          ? MOCK_DOCTORS.filter(d => Number(d.departmentId) === Number(deptId))
+          : MOCK_DOCTORS;
+      }
+
+      setDoctorList(docs);
+      setIsLoadingDoctors(false);
+    };
+    fetchDoctorsForDept();
+  }, [wDept, isModalOpen]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -222,20 +304,30 @@ const PatientAppointments = () => {
   const handleCreateAppointment = async () => {
     try {
       const symptomValue = wSymptoms || 'Kiểm tra sức khỏe';
+      const formattedTime = wTime.length === 5 ? wTime + ':00' : wTime;
+
       // doctorId = doctors.id (bảng doctors trong DB), KHÔNG phải users.id
       await createAppointmentAPI({
         patientId: user?.id || user?.userId || 0,
         doctorId: parseInt(wDoctor.id),
         appointmentDate: wDate,
-        startTime: wTime + ':00',
+        startTime: formattedTime,
         symptoms: symptomValue,
         symptom: symptomValue,
         reason: symptomValue,
         description: symptomValue
       });
+
+      // Ngay sau khi xác nhận đăng ký thành công, đánh dấu ca khám này là Bận (booked)
+      setWBookedSlots(prev => Array.from(new Set([...prev, wTime])));
       setWDone(true);
       setWStep(5);
-      fetchAppointmentsAndDepartments();
+
+      // Tải lại danh sách đặt lịch và cập nhật danh sách slot bận
+      await fetchAppointmentsAndDepartments();
+      if (wDoctor?.id && wDate) {
+        computeBookedSlots(wDoctor.id, wDate);
+      }
     } catch (error) {
       alert('Đặt lịch thất bại. Vui lòng kiểm tra lại thông tin!');
     }
@@ -327,7 +419,7 @@ const PatientAppointments = () => {
       {isModalOpen && (() => {
         const step = wStep;
         const LABELS = ['Chọn khoa', 'Chọn bác sĩ', 'Chọn lịch', 'Xác nhận'];
-        const doctorsInDept = wDept
+        const doctorsInDept = (wDept && doctorList.some(d => (d.departmentId || d.department_id)))
           ? doctorList.filter(d => String(d.departmentId || d.department_id) === String(wDept.id))
           : doctorList;
 
@@ -378,7 +470,10 @@ const PatientAppointments = () => {
                             const name = dept.name || dept.departmentName;
                             const sel = wDept?.id === id;
                             return (
-                              <div key={id} onClick={() => setWDept({ id, name, description: dept.description })}
+                              <div key={id} onClick={() => {
+                                setWDept({ id, name, description: dept.description });
+                                setWDoctor(null);
+                              }}
                                 style={{ padding:'14px 16px', border:`2px solid ${sel?'#0f6eff':'#e2e8f0'}`,
                                   borderRadius:'12px', cursor:'pointer', transition:'all 0.15s',
                                   background: sel?'#eff6ff':'#fff',
@@ -399,12 +494,14 @@ const PatientAppointments = () => {
                     <p style={{ margin:'0 0 14px', color:'#64748b', fontSize:'13px' }}>
                       Bác sĩ thuộc khoa <strong style={{ color:'#0f6eff' }}>{wDept?.name}</strong>:
                     </p>
-                    {doctorsInDept.length === 0
-                      ? <div style={{ textAlign:'center', padding:'30px', color:'#94a3b8' }}>
-                          <div style={{ fontSize:'36px' }}>👨‍⚕️</div>
-                          <p style={{ margin:'8px 0 0' }}>Khoa này chưa có bác sĩ được phân công.</p>
-                        </div>
-                      : <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                    {isLoadingDoctors ? (
+                      <p style={{ textAlign:'center', padding:'30px', color:'#94a3b8' }}>⏳ Đang tải danh sách bác sĩ thuộc khoa...</p>
+                    ) : doctorsInDept.length === 0 ? (
+                      <div style={{ textAlign:'center', padding:'30px', color:'#94a3b8' }}>
+                        <div style={{ fontSize:'36px' }}>👨‍⚕️</div>
+                        <p style={{ margin:'8px 0 0' }}>Khoa này chưa có bác sĩ được phân công.</p>
+                      </div>
+                    ) : <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                           {doctorsInDept.map(doc => {
                             const id = doc.id || doc.doctorId;
                             const name = doc.fullName || doc.name;
@@ -439,38 +536,78 @@ const PatientAppointments = () => {
                 {step === 3 && (
                   <div>
                     <div style={{ marginBottom:'20px' }}>
-                      <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'8px' }}>📅 Chọn ngày khám:</label>
+                      <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'8px' }}>
+                        📅 Chọn ngày khám (BS. <strong style={{ color:'#0f6eff' }}>{wDoctor?.fullName}</strong>):
+                      </label>
                       <input type="date"
-                        min={new Date(Date.now()+86400000).toISOString().split('T')[0]}
+                        min={new Date().toISOString().split('T')[0]}
                         value={wDate}
-                        onChange={e => { setWDate(e.target.value); setWTime(''); computeBookedSlots(wDoctor?.id, e.target.value); }}
+                        onChange={e => {
+                          const newDate = e.target.value;
+                          setWDate(newDate);
+                          setWTime('');
+                          if (wDoctor?.id) {
+                            computeBookedSlots(wDoctor.id, newDate);
+                          }
+                        }}
                         style={{ width:'100%', padding:'12px 14px', border:'2px solid #e2e8f0', borderRadius:'10px', fontSize:'15px', boxSizing:'border-box', outline:'none' }} />
                     </div>
 
-                    {wDate && (
+                    {!wDate ? (
+                      <div style={{ padding:'20px', textAlign:'center', color:'#64748b', background:'#f8fafc', borderRadius:'12px', border:'1px dashed #cbd5e1', fontSize:'13px' }}>
+                        👉 Vui lòng chọn <strong>ngày khám</strong> để xem các ca khám 30 phút của Bác sĩ.
+                      </div>
+                    ) : (
                       <div style={{ marginBottom:'20px' }}>
-                        <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'10px' }}>⏰ Chọn khung giờ:</label>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px' }}>
+                          <label style={{ fontSize:'13px', fontWeight:'700', color:'#0f172a' }}>⏰ Các ca khám ngày {wDate} (30 phút/ca):</label>
+                          <div style={{ display:'flex', gap:'12px', fontSize:'11px' }}>
+                            <span style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+                              <span style={{ width:'10px', height:'10px', background:'#ef4444', borderRadius:'50%', display:'inline-block' }}></span>
+                              <strong style={{ color:'#ef4444' }}>Bận</strong> (Màu đỏ - Khóa)
+                            </span>
+                            <span style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+                              <span style={{ width:'10px', height:'10px', background:'#10b981', borderRadius:'50%', display:'inline-block' }}></span>
+                              <strong style={{ color:'#10b981' }}>Rảnh</strong> (Được chọn)
+                            </span>
+                          </div>
+                        </div>
+
                         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'8px' }}>
                           {ALL_TIME_SLOTS.map(slot => {
                             const booked = wBookedSlots.includes(slot);
                             const sel = wTime === slot;
                             return (
                               <button key={slot} disabled={booked} onClick={() => !booked && setWTime(slot)}
-                                style={{ padding:'10px 4px', borderRadius:'10px', border:`2px solid ${sel?'#0f6eff':booked?'#fecaca':'#e2e8f0'}`,
-                                  background: sel?'#0f6eff':booked?'#fef2f2':'#fff',
-                                  color: sel?'#fff':booked?'#ef4444':'#334155',
-                                  fontSize:'13px', fontWeight:'600', cursor: booked?'not-allowed':'pointer',
-                                  transition:'all 0.1s' }}>
-                                {slot}
-                                {booked && <div style={{ fontSize:'9px', marginTop:'1px', opacity:0.8 }}>Đã đặt</div>}
+                                style={{
+                                  padding:'10px 4px',
+                                  borderRadius:'10px',
+                                  border:`2px solid ${sel ? '#0f6eff' : booked ? '#fca5a5' : '#cbd5e1'}`,
+                                  background: sel ? '#0f6eff' : booked ? '#fef2f2' : '#ffffff',
+                                  color: sel ? '#ffffff' : booked ? '#dc2626' : '#334155',
+                                  fontSize:'13px',
+                                  fontWeight:'700',
+                                  cursor: booked ? 'not-allowed' : 'pointer',
+                                  display:'flex',
+                                  flexDirection:'column',
+                                  alignItems:'center',
+                                  justifyContent:'center',
+                                  boxShadow: sel ? '0 4px 12px rgba(15,110,255,0.25)' : 'none',
+                                  transition:'all 0.15s'
+                                }}>
+                                <div>{slot}</div>
+                                {booked ? (
+                                  <span style={{ fontSize:'10px', marginTop:'2px', color:'#dc2626', background:'#fee2e2', padding:'1px 6px', borderRadius:'8px', fontWeight:'800' }}>
+                                    ⛔ Bận
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize:'10px', marginTop:'2px', color: sel ? '#ffffff' : '#16a34a', background: sel ? 'transparent' : '#dcfce7', padding:'1px 6px', borderRadius:'8px', fontWeight:'800' }}>
+                                    {sel ? '✓ Chọn' : '🟢 Rảnh'}
+                                  </span>
+                                )}
                               </button>
                             );
                           })}
-                        </div>
-                        <div style={{ display:'flex', gap:'14px', marginTop:'10px', fontSize:'11px', color:'#94a3b8' }}>
-                          <span>🟦 Đang chọn</span>
-                          <span style={{ color:'#ef4444' }}>🟥 Đã đặt</span>
-                          <span>⬜ Còn trống</span>
                         </div>
                       </div>
                     )}
@@ -498,7 +635,7 @@ const PatientAppointments = () => {
                         <span style={{ color:'#334155' }}>{wDoctor?.specialization || 'Đa khoa'}</span>
                         <span style={{ color:'#64748b', fontWeight:'600' }}>📅 Ngày khám:</span>
                         <strong style={{ color:'#0f6eff' }}>{wDate}</strong>
-                        <span style={{ color:'#64748b', fontWeight:'600' }}>⏰ Giờ khám:</span>
+                        <span style={{ color:'#64748b', fontWeight:'600' }}>⏰ Ca khám (30p):</span>
                         <strong style={{ color:'#0f6eff' }}>{wTime}</strong>
                         {wSymptoms && <><span style={{ color:'#64748b', fontWeight:'600' }}>📝 Triệu chứng:</span><span style={{ color:'#334155' }}>{wSymptoms}</span></>}
                       </div>
@@ -507,15 +644,15 @@ const PatientAppointments = () => {
                   </div>
                 )}
 
-                {/* BƯỚC 5 – Thành công */}
+                {/* BƯỚC 5 – Đăng ký thành công */}
                 {step === 5 && (
                   <div style={{ textAlign:'center', padding:'16px 0' }}>
                     <div style={{ fontSize:'60px', marginBottom:'14px' }}>🎉</div>
-                    <h3 style={{ margin:'0 0 10px', color:'#10b981', fontSize:'22px', fontWeight:'800' }}>Đặt lịch thành công!</h3>
-                    <p style={{ color:'#64748b', fontSize:'14px', lineHeight:'1.7', margin:'0 0 20px' }}>
-                      Lịch hẹn với <strong>BS. {wDoctor?.fullName}</strong><br />
-                      vào <strong style={{ color:'#0f6eff' }}>{wDate}</strong> lúc <strong style={{ color:'#0f6eff' }}>{wTime}</strong><br />
-                      đã được ghi nhận thành công.
+                    <h3 style={{ margin:'0 0 10px', color:'#10b981', fontSize:'22px', fontWeight:'800' }}>Đăng ký thành công!</h3>
+                    <p style={{ color:'#475569', fontSize:'14px', lineHeight:'1.7', margin:'0 0 20px' }}>
+                      Lịch hẹn với <strong>BS. {wDoctor?.fullName}</strong> ({wDept?.name})<br />
+                      vào ngày <strong style={{ color:'#0f6eff' }}>{wDate}</strong> lúc <strong style={{ color:'#0f6eff' }}>{wTime}</strong><br />
+                      đã được ghi nhận thành công và ca khám này đã được đánh dấu là <strong style={{ color:'#ef4444' }}>⛔ Bận</strong>.
                     </p>
                     <p style={{ fontSize:'12px', color:'#94a3b8', margin:0 }}>Vui lòng đến đúng giờ và mang theo CMND/CCCD.</p>
                     <button onClick={() => { setIsModalOpen(false); resetWizard(); }}
