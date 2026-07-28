@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateDoctorAPI, getAllDoctorsAPI, searchDoctorsAPI, getAllUsersAPI, softDeleteUserAPI } from '../../services/adminService'; // 🚀 ĐÃ THÊM API USERS
 import { getAllDepartmentsAPI, createDepartmentAPI, updateDepartmentAPI, deleteDepartmentAPI } from '../../services/departmentService';
-import { createAppointmentAPI, getAppointmentDetailsAPI, deleteAppointmentAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, createDrugAPI, getDrugDetailsAPI, updateDrugAPI, deleteDrugAPI } from '../../services/drugService';
 // 🚀 ĐÃ IMPORT ĐẦY ĐỦ 5 HÀM API
 import { createMedicalRecordAPI, getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, addMedicinesToRecordAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
@@ -11,7 +10,6 @@ import '../../style/admin.css';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import DoctorTab from './DoctorTab';
-import AppointmentTab from './AppointmentTab';
 import DepartmentTab from './DepartmentTab';
 import DrugTab from './DrugTab';
 import PatientTab from './PatientTab'; // 🚀 ĐÃ THÊM COMPONENT BỆNH NHÂN
@@ -228,12 +226,6 @@ const AdminDashboard = () => {
             {/* 🚀 ĐÃ CẬP NHẬT TAB HIỂN THỊ TẠI ĐÂY */}
             {activeTab === 'doctors' && <DoctorTab doctors={doctors} isLoading={isLoading} openModal={openModal} handleDelete={handleDelete} />}
             {activeTab === 'patients' && <PatientTab patients={patients} isLoading={isPatientLoading} handleSoftDelete={handleSoftDeletePatient} />}
-            {activeTab === 'appointments' && (
-              <AppointmentTab 
-                doctors={doctors}
-                openModal={openModal} searchApptId={searchApptId} setSearchApptId={setSearchApptId} handleViewAppointmentDetails={handleViewAppointmentDetails} searchRecordId={searchRecordId} setSearchRecordId={setSearchRecordId} handleViewMedicalRecord={handleViewMedicalRecord} searchPatientHistoryId={searchPatientHistoryId} setSearchPatientHistoryId={setSearchPatientHistoryId} handleViewPatientHistory={handleViewPatientHistory}
-              />
-            )}
             {activeTab === 'specialties' && <DepartmentTab specialties={specialties} isDeptLoading={isDeptLoading} openModal={openModal} handleDelete={handleDelete} />}
             {activeTab === 'drugs' && <DrugTab drugs={drugs} isDrugLoading={isDrugLoading} openModal={openModal} handleViewDrugDetails={handleViewDrugDetails} handleDelete={handleDelete} />}
           </div>
@@ -243,7 +235,10 @@ const AdminDashboard = () => {
       {modalConfig.isOpen && (
         <div className="modal" style={{ display: 'flex' }}>
           <div className="modal-content">
-            <h3>{modalConfig.isEdit ? 'Cập nhật thông tin' : 'Thêm mới'}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0 }}>{modalConfig.isEdit ? 'Cập nhật thông tin' : 'Thêm mới'}</h3>
+              <button onClick={closeModal} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             {modalConfig.type === 'doctor' && (
               <>
                 <input type="text" placeholder="Họ tên (Chỉ xem)" value={formData.fullName || ''} disabled style={{ backgroundColor: '#e2e8f0', cursor: 'not-allowed' }} />
@@ -264,9 +259,8 @@ const AdminDashboard = () => {
                 <input type="text" placeholder="Đơn vị tính" value={formData.unit || ''} onChange={e => setFormData({...formData, unit: e.target.value})} style={{padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box'}} />
               </>
             )}
-            <div className="modal-actions">
-              <button className="btn-outline" onClick={closeModal}>Hủy</button>
-              <button className="btn-primary" onClick={handleSaveModal}>Lưu</button>
+            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+              <button className="btn-primary" onClick={handleSaveModal} style={{ padding: '12px 36px', fontSize: '15px', fontWeight: '700', borderRadius: '10px', boxShadow: '0 4px 14px rgba(15, 110, 255, 0.35)' }}>Lưu</button>
             </div>
           </div>
         </div>
@@ -276,7 +270,10 @@ const AdminDashboard = () => {
       {isApptDetailModalOpen && apptDetails && (
         <div className="modal" style={{ display: 'flex', zIndex: 10000 }}>
           <div className="modal-content" style={{ maxWidth: '450px' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>Chi tiết Lịch hẹn #{apptDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0 }}>Chi tiết Lịch hẹn #{apptDetails.id}</h3>
+              <button onClick={() => setIsApptDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ textAlign: 'left', margin: '15px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '15px' }}>
               <p style={{ margin: 0 }}><strong>Bệnh nhân:</strong> {apptDetails.patientName || 'Chưa rõ'}</p>
               <p style={{ margin: 0 }}><strong>Bác sĩ:</strong> {apptDetails.doctorName || 'Chưa rõ'}</p>
@@ -284,12 +281,9 @@ const AdminDashboard = () => {
               <p style={{ margin: 0 }}><strong>Giờ hẹn:</strong> {apptDetails.startTime}</p>
               <p style={{ margin: 0 }}><strong>Trạng thái:</strong> <span className={`status-badge ${apptDetails.status === 'PENDING' ? 'pending' : (apptDetails.status === 'CANCELLED' ? 'cancelled' : 'confirmed')}`}>{apptDetails.status}</span></p>
             </div>
-            <div className="modal-actions" style={{ justifyContent: 'space-between', marginTop: '20px' }}>
-              <div>
-                 <button onClick={() => handleAdminDeleteAppointment(apptDetails.id)} style={{ padding: '10px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginRight: '10px' }}>Xóa</button>
-                 <button onClick={() => openRecordModal(apptDetails.id)} style={{ padding: '10px 16px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Lập bệnh án</button>
-              </div>
-              <button className="btn-primary" onClick={() => setIsApptDetailModalOpen(false)}>Đóng lại</button>
+            <div className="modal-actions" style={{ justifyContent: 'center', marginTop: '20px' }}>
+              <button onClick={() => handleAdminDeleteAppointment(apptDetails.id)} style={{ padding: '10px 20px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', marginRight: '10px' }}>Xóa</button>
+              <button onClick={() => openRecordModal(apptDetails.id)} style={{ padding: '10px 20px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Lập bệnh án</button>
             </div>
           </div>
         </div>
@@ -298,7 +292,10 @@ const AdminDashboard = () => {
       {isRecordModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 14000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Lập bệnh án & Kê đơn</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>🩺 Lập bệnh án & Kê đơn</h3>
+              <button onClick={() => setIsRecordModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>👤 Bệnh nhân:</strong> {apptDetails?.patientName || 'Chưa rõ'}</p>
                <p style={{ margin: 0, fontSize: '14px', color: '#ef4444' }}><strong>⚠️ Triệu chứng:</strong> {apptDetails?.symptoms || 'Bệnh nhân không ghi chú triệu chứng.'}</p>
@@ -330,9 +327,8 @@ const AdminDashboard = () => {
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px', gap: '10px' }}>
-              <button onClick={() => setIsRecordModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
-              <button onClick={handleSaveMedicalRecord} style={{ padding: '8px 16px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Lưu Bệnh Án</button>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+              <button onClick={handleSaveMedicalRecord} style={{ padding: '12px 36px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', boxShadow: '0 4px 14px rgba(15, 110, 255, 0.35)' }}>Lưu Bệnh Án</button>
             </div>
           </div>
         </div>
@@ -341,7 +337,10 @@ const AdminDashboard = () => {
       {isRecordDetailModalOpen && recordDetails && (
         <div className="modal" style={{ display: 'flex', zIndex: 15000 }}>
           <div className="modal-content" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+              <button onClick={() => { setIsRecordDetailModalOpen(false); setShowAddMedicineForm(false); setNewMedicines([{ medicineId: '', quantity: 1, dosage: '' }]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             
             <div style={{ textAlign: 'left', margin: '15px 0', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155' }}>
               <p style={{ margin: 0 }}><strong>Mã Lịch hẹn:</strong> #{recordDetails.appointmentID || recordDetails.appointmentId || 'Chưa rõ'}</p>
@@ -395,9 +394,6 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
-            <div className="modal-actions" style={{ justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button className="btn-primary" onClick={() => { setIsRecordDetailModalOpen(false); setShowAddMedicineForm(false); setNewMedicines([{ medicineId: '', quantity: 1, dosage: '' }]); }}>Đóng toàn bộ</button>
-            </div>
           </div>
         </div>
       )}
@@ -405,7 +401,10 @@ const AdminDashboard = () => {
       {isHistoryModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 16000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '650px', maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>📜 Lịch Sử Sổ Khám Bệnh nhân #{searchPatientHistoryId}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#2563eb' }}>📜 Lịch Sử Sổ Khám Bệnh nhân #{searchPatientHistoryId}</h3>
+              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
               {historyRecords.length > 0 ? historyRecords.map((rec) => (
                 <div key={rec.id} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>
@@ -430,9 +429,6 @@ const AdminDashboard = () => {
                 <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>📭 Bệnh nhân này chưa từng có lịch sử lập bệnh án nào trên hệ thống.</div>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '10px 24px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng sổ khám</button>
-            </div>
           </div>
         </div>
       )}
@@ -440,13 +436,13 @@ const AdminDashboard = () => {
       {isDrugDetailModalOpen && drugDetails && (
         <div className="modal" style={{ display: 'flex', zIndex: 12000 }}>
           <div className="modal-content" style={{ maxWidth: '400px' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}> 💊 Chi tiết Thuốc #{drugDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}> 💊 Chi tiết Thuốc #{drugDetails.id}</h3>
+              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ textAlign: 'left', margin: '15px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '15px' }}>
               <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{color: '#0f6eff', fontWeight: 'bold'}}>{drugDetails.name}</span></p>
               <p style={{ margin: 0 }}><strong>Đơn vị tính:</strong> {drugDetails.unit || 'Chưa rõ'}</p>
-            </div>
-            <div className="modal-actions" style={{ justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button className="btn-primary" onClick={() => setIsDrugDetailModalOpen(false)}>Đóng lại</button>
             </div>
           </div>
         </div>

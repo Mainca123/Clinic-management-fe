@@ -27,6 +27,11 @@ export const cancelAppointmentAPI = async (id, reasonText) => {
 };
 
 
+// Lấy lịch hẹn theo bác sĩ và ngày để kiểm tra slot đã đặt
+export const getAppointmentsByDoctorAndDateAPI = async (doctorId, date) => {
+    return await api.get(`/appointments?page=0&size=100&doctorId=${doctorId}&date=${date}`);
+};
+
 // xóa/hủy trạng thái lịch hẹn
 export const deleteAppointmentAPI = async (id) => {
     return await api.patch(`/appointments/${id}/status/delete`);

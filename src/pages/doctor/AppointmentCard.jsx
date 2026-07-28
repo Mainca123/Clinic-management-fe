@@ -1,85 +1,151 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 
-const AppointmentCard = ({ isLoadingAppointments, appointments, setIsModalOpen, openRecordModal, handleViewAppointmentDetails, handleConfirmAppointment, handleCancelAppointment, handleViewMedicalRecord, handleViewPatientHistory }) => {
+const AppointmentCard = ({ 
+  isLoadingAppointments, 
+  appointments, 
+  setIsModalOpen, 
+  openRecordModal, 
+  handleViewAppointmentDetails, 
+  handleConfirmAppointment, 
+  handleCancelAppointment, 
+  handleViewMedicalRecord, 
+  handleViewPatientHistory 
+}) => {
   const [searchRecordId, setSearchRecordId] = useState('');
-  // 🚀 STATE TRA CỨU SỔ KHÁM THEO MÃ BỆNH NHÂN
   const [patientHistoryId, setPatientHistoryId] = useState('');
 
   return (
-    <div className="card appointment-card">
-      <div className="card-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
-        <h2 className="card-title">Lịch hẹn sắp tới</h2>
+    <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)', overflow: 'hidden' }}>
+      
+      {/* CARD TOOLBAR HEADER */}
+      <div className="doctor-card-toolbar">
+        <h2 className="doctor-card-title">
+          <span>📅</span> Lịch Hẹn Sắp Tới
+        </h2>
         
-        <div style={{ display: 'flex', gap: '10px', marginLeft: 'auto', flexWrap: 'wrap' }}>
-            {/* Tra cứu sổ khám bệnh cũ theo ID bệnh nhân */}
-            <input type="number" placeholder="Mã ID Bệnh nhân..." value={patientHistoryId} onChange={e => setPatientHistoryId(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #60a5fa', width: '130px', fontSize: '13px' }} />
-            <button onClick={() => handleViewPatientHistory(patientHistoryId)} style={{ padding: '6px 12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Xem Sổ Khám</button>
+        <div className="doctor-toolbar-actions">
+          {/* Tra cứu Sổ khám bệnh cũ theo ID bệnh nhân */}
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <input 
+              type="number" 
+              placeholder="Mã BN (ID)..." 
+              value={patientHistoryId} 
+              onChange={e => setPatientHistoryId(e.target.value)} 
+              className="doctor-search-input"
+              style={{ width: '130px' }}
+            />
+            <button 
+              onClick={() => handleViewPatientHistory(patientHistoryId)} 
+              className="doctor-btn doctor-btn-purple"
+            >
+              📒 Xem Sổ Khám
+            </button>
+          </div>
 
-            {/* Tra cứu bệnh án lẻ */}
-            <input type="number" placeholder="ID Bệnh án..." value={searchRecordId} onChange={e => setSearchRecordId(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100px', fontSize: '13px' }} />
-            <button onClick={() => handleViewMedicalRecord(searchRecordId)} style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Tra cứu BA</button>
-            
-            <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ padding: '6px 12px', fontSize: '13px' }}>+ Thêm lịch</button>
+          {/* Tra cứu bệnh án lẻ */}
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <input 
+              type="number" 
+              placeholder="ID Bệnh án..." 
+              value={searchRecordId} 
+              onChange={e => setSearchRecordId(e.target.value)} 
+              className="doctor-search-input"
+              style={{ width: '110px' }}
+            />
+            <button 
+              onClick={() => handleViewMedicalRecord(searchRecordId)} 
+              className="doctor-btn doctor-btn-success"
+            >
+              🔍 Tra Cứu BA
+            </button>
+          </div>
+          
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            className="doctor-btn doctor-btn-primary"
+          >
+            ➕ Thêm Lịch Hẹn
+          </button>
         </div>
       </div>
-      <div className="appointment-list" style={{ padding: '0 4px' }}>
+
+      {/* TABLE CONTENT */}
+      <div className="doctor-table-container">
         {isLoadingAppointments ? (
-          <p style={{padding: '20px', textAlign: 'center', color: '#64748b'}}>Đang tải dữ liệu lịch hẹn...</p>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+            <p style={{ margin: 0, fontWeight: '600' }}>⏳ Đang tải dữ liệu lịch hẹn...</p>
+          </div>
         ) : appointments.length > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="doctor-table">
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '5%' }}>#</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '30%' }}>Bệnh nhân</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '15%' }}>Ngày khám</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '12%' }}>Giờ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '20%' }}>Triệu chứng</th>
-                <th style={{ padding: '12px 16px', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '12%' }}>Trạng thái</th>
-                <th style={{ padding: '12px 16px', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: '600', width: '20%' }}>Hành động</th>
+              <tr>
+                <th style={{ width: '6%', textAlign: 'center' }}>#</th>
+                <th style={{ width: '32%' }}>Bệnh nhân</th>
+                <th style={{ width: '16%' }}>Ngày khám</th>
+                <th style={{ width: '12%' }}>Giờ hẹn</th>
+                <th style={{ width: '22%' }}>Triệu chứng / Lý do</th>
+                <th style={{ width: '12%', textAlign: 'center' }}>Trạng thái</th>
+                <th style={{ width: '20%', textAlign: 'center' }}>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {appointments.map((appt, index) => (
-                <tr key={appt.id || index}
-                  style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <td style={{ padding: '14px 16px', color: '#94a3b8', fontSize: '13px' }}>#{appt.id}</td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${appt.patientId || index}`} alt="Patient"
-                        style={{ width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0 }} />
+                <tr key={appt.id || index}>
+                  <td style={{ textAlign: 'center', color: '#64748b', fontWeight: '600' }}>#{appt.id}</td>
+                  <td>
+                    <div className="doctor-patient-pill">
+                      <img 
+                        src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${appt.patientId || index}`} 
+                        alt="Patient Avatar"
+                        className="doctor-patient-avatar" 
+                      />
                       <div>
-                        <div style={{ fontWeight: '600', fontSize: '15px', color: '#0f172a' }}>{appt.patientName || `BN #${appt.patientId}`}</div>
+                        <div className="doctor-patient-name">{appt.patientName || `Bệnh nhân #${appt.patientId}`}</div>
+                        <div className="doctor-patient-sub">Mã hồ sơ: P-{1000 + (appt.patientId || index)}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '14px 16px', color: '#334155', fontSize: '14px' }}>{appt.appointmentDate}</td>
-                  <td style={{ padding: '14px 16px', color: '#334155', fontSize: '14px', fontWeight: '500' }}>{appt.startTime}</td>
-                  <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px' }}>{appt.symptoms || appt.reason || appt.description || <span style={{ fontStyle: 'italic', color: '#cbd5e1' }}>Không có ghi chú</span>}</td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <span className={`status-badge ${appt.status === 'PENDING' ? 'pending' : appt.status === 'CANCELLED' ? 'cancelled' : 'confirmed'}`}>
-                      {appt.status || 'Chờ khám'}
+                  <td style={{ color: '#0f172a', fontWeight: '600' }}>{appt.appointmentDate}</td>
+                  <td>
+                    <span style={{ padding: '4px 10px', background: '#f1f5f9', color: '#0f6eff', borderRadius: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
+                      ⏰ {appt.startTime}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                  <td style={{ color: '#475569', fontSize: '0.875rem' }}>
+                    {appt.symptoms || appt.reason || appt.description || <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>Không có ghi chú</span>}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className={`doctor-badge ${appt.status === 'PENDING' ? 'pending' : appt.status === 'CANCELLED' ? 'cancelled' : 'confirmed'}`}>
+                      {appt.status === 'PENDING' ? '⏳ Chờ duyệt' : appt.status === 'CANCELLED' ? '❌ Đã hủy' : '✅ Đã xác nhận'}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                      <button onClick={() => handleViewAppointmentDetails(appt.id)}
-                        style={{ padding: '6px 12px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                        Chi tiết
+                      <button 
+                        onClick={() => handleViewAppointmentDetails(appt.id)}
+                        className="doctor-btn doctor-btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                      >
+                        👁️ Chi tiết
                       </button>
+
                       {appt.status === 'PENDING' && (
-                        <button onClick={() => handleConfirmAppointment(appt.id)}
-                          style={{ padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                          Xác nhận
+                        <button 
+                          onClick={() => handleConfirmAppointment(appt.id)}
+                          className="doctor-btn doctor-btn-success"
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        >
+                          ✓ Duyệt
                         </button>
                       )}
+
                       {appt.status !== 'CANCELLED' && (
-                        <button onClick={() => handleCancelAppointment(appt.id)}
-                          style={{ padding: '6px 12px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                          Hủy
+                        <button 
+                          onClick={() => handleCancelAppointment(appt.id)}
+                          className="doctor-btn doctor-btn-danger"
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        >
+                          ✕ Hủy
                         </button>
                       )}
                     </div>
@@ -89,7 +155,10 @@ const AppointmentCard = ({ isLoadingAppointments, appointments, setIsModalOpen, 
             </tbody>
           </table>
         ) : (
-          <div style={{padding: '40px', textAlign: 'center', color: '#64748b'}}>📭 Hôm nay bác sĩ chưa có lịch hẹn nào.</div>
+          <div style={{ padding: '50px 20px', textAlign: 'center', color: '#64748b' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
+            <p style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Hôm nay bác sĩ chưa có lịch hẹn nào.</p>
+          </div>
         )}
       </div>
     </div>

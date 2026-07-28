@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { resetPasswordAPI } from './services/authService';
 import './style/base.css'; // Dùng lại CSS của trang Login cho đẹp
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -37,7 +38,27 @@ const ForgotPassword = () => {
   }, []);
   return (
     <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handleSubmit} style={{ position: 'relative' }}>
+        <button 
+          type="button" 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            position: 'absolute', 
+            top: '15px', 
+            right: '15px', 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#ef4444', 
+            fontSize: '22px', 
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            lineHeight: 1,
+            padding: '4px 8px'
+          }}
+          title="Đóng / Quay lại"
+        >
+          ✕
+        </button>
         <h2>Quên Mật Khẩu</h2>
         <p style={{ textAlign: 'center', color: '#475569', marginBottom: '20px', fontSize: '0.95rem' }}>
           Nhập địa chỉ email bạn đã đăng ký, chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu cho bạn.

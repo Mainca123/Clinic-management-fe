@@ -79,7 +79,27 @@ const Register = () => {
 
   return (
     <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handleSubmit} style={{ position: 'relative' }}>
+        <button 
+          type="button" 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            position: 'absolute', 
+            top: '15px', 
+            right: '15px', 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#ef4444', 
+            fontSize: '22px', 
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            lineHeight: 1,
+            padding: '4px 8px'
+          }}
+          title="Đóng / Quay lại"
+        >
+          ✕
+        </button>
         <h2>Tạo Tài Khoản MediPro</h2>
         
         {errorMsg && (

@@ -225,9 +225,6 @@ const PatientDrugPrice = () => {
             <p style={{ margin: 0 }}><strong>Đơn vị:</strong> {selectedDrug.unit || 'Chưa cập nhật'}</p>
             <p style={{ margin: 0 }}><strong>Thành phần:</strong> {selectedDrug.ingredient || 'Đang cập nhật'}</p>
             <p style={{ margin: 0 }}><strong>Hướng dẫn sử dụng:</strong> {selectedDrug.usageInstruction || 'Đang cập nhật'}</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Trở lại danh sách</button>
-            </div>
           </div>
         </div>
       )}

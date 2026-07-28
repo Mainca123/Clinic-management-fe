@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createDoctorAPI } from '../../services/adminService';
 import '../../style/base.css';
-// Bạn có thể tạo thêm file admin.css nếu cần, hoặc dùng tạm base.css
+import '../../style/admin.css';
 
 const AdminCreateDoctor = () => {
   const navigate = useNavigate();
@@ -66,20 +66,29 @@ const AdminCreateDoctor = () => {
   return (
     <div className="dashboard-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       
-      {/* Tạm thời để 1 cái Sidebar đơn giản cho Admin, sau này bạn có thể tách ra Component riêng */}
-      <aside className="sidebar" style={{ width: '260px', backgroundColor: 'white', padding: '20px', borderRight: '1px solid #e2e8f0' }}>
-        <div className="logo" style={{ marginBottom: '40px', fontSize: '1.5rem', fontWeight: 'bold' }}>
+      {/* Sidebar Admin */}
+      <aside className="sidebar" style={{ width: '260px', backgroundColor: 'white', padding: '20px', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+        <div className="logo" style={{ marginBottom: '40px', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => navigate('/admin/dashboard')}>
           <span style={{ color: '#0f6eff' }}>Medi</span>Pro <span style={{ fontSize: '1rem', color: '#ef4444' }}>ADMIN</span>
         </div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-           <div style={{ padding: '12px', background: '#eff6ff', color: '#0f6eff', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>➕ Thêm Bác Sĩ</div>
-           <div onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} style={{ padding: '12px', color: '#64748b', cursor: 'pointer', marginTop: 'auto' }}>🚪 Đăng xuất</div>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+           <div style={{ padding: '12px 16px', background: '#eff6ff', color: '#0f6eff', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <span>➕</span> Thêm Bác Sĩ
+           </div>
         </nav>
+        <div onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} style={{ padding: '12px', color: '#64748b', cursor: 'pointer', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>🚪</span> Đăng xuất
+        </div>
       </aside>
 
       <main style={{ flex: 1, padding: '40px' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', background: 'white', padding: '32px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-          <h2 style={{ margin: '0 0 24px 0', color: '#1e293b' }}>Tạo Hồ Sơ Bác Sĩ Mới</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
+            <h2 style={{ margin: 0, color: '#1e293b' }}>Tạo Hồ Sơ Bác Sĩ Mới</h2>
+            <button type="button" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px 18px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ← Quay lại
+            </button>
+          </div>
           
           {message && <div style={{ padding: '16px', backgroundColor: '#dcfce3', color: '#166534', borderRadius: '8px', marginBottom: '24px' }}>{message}</div>}
           {errorMsg && <div style={{ padding: '16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '24px' }}>{errorMsg}</div>}
@@ -90,11 +99,11 @@ const AdminCreateDoctor = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Tên đăng nhập *</label>
-                <input type="text" name="username" value={formData.username} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="text" name="username" value={formData.username} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Mật khẩu *</label>
-                <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
             </div>
 
@@ -102,23 +111,23 @@ const AdminCreateDoctor = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Họ và tên *</label>
-                <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Email *</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="email" name="email" value={formData.email} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Số điện thoại *</label>
-                <input type="text" name="phone" value={formData.phone} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="text" name="phone" value={formData.phone} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Ngày sinh *</label>
-                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Giới tính</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white' }}>
+                <select name="gender" value={formData.gender} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white', boxSizing: 'border-box' }}>
                   <option value="MALE">Nam</option>
                   <option value="FEMALE">Nữ</option>
                   <option value="OTHER">Khác</option>
@@ -130,15 +139,15 @@ const AdminCreateDoctor = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Phòng khoa (ID) *</label>
-                <input type="number" name="departmentId" value={formData.departmentId} onChange={handleChange} required placeholder="Ví dụ: 1" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="number" name="departmentId" value={formData.departmentId} onChange={handleChange} required placeholder="Ví dụ: 1" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Số năm kinh nghiệm *</label>
-                <input type="number" name="experienceYears" value={formData.experienceYears} onChange={handleChange} required placeholder="Ví dụ: 5" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="number" name="experienceYears" value={formData.experienceYears} onChange={handleChange} required placeholder="Ví dụ: 5" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Chuyên môn / Học vị *</label>
-                <input type="text" name="specialization" value={formData.specialization} onChange={handleChange} required placeholder="Ví dụ: Thạc sĩ, Chuyên khoa II..." style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                <input type="text" name="specialization" value={formData.specialization} onChange={handleChange} required placeholder="Ví dụ: Thạc sĩ, Chuyên khoa II..." style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
               </div>
             </div>
 

@@ -430,7 +430,10 @@ const PatientDashboard = () => {
       {isDrugModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 12000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}> 💊  Bảng giá thuốc niêm yết</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>💊 Bảng giá thuốc niêm yết</h3>
+              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {drugs.length > 0 ? drugs.map(d => (
                 <div key={d.id} style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -443,9 +446,6 @@ const PatientDashboard = () => {
               )) : (
                 <p>Chưa có dữ liệu thuốc!</p>
               )}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '8px 20px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Đóng lại</button>
             </div>
           </div>
         </div>

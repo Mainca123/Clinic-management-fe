@@ -300,130 +300,153 @@ const handleCancelAppointment = async (id) => {
       <main className="main-content">
         <Header user={user} />
         <div className="page-content">
-          <h1 className="page-title">Chào buổi sáng, BS. {user?.fullName?.split(' ').pop() || ''}!</h1>
+          
+          {/* GREETING HEADER BANNER */}
+          <div className="doctor-page-header">
+            <div>
+              <h1 className="doctor-greeting">
+                👋 Chào mừng, BS. {user?.fullName || user?.username || 'Bác sĩ'}!
+              </h1>
+              <p className="doctor-subgreeting">
+                Chuyên khoa: <strong style={{ color: '#0f6eff' }}>{user?.specialization || 'Đa khoa'}</strong> · Hôm nay bạn có <strong style={{ color: '#10b981' }}>{appointments.length}</strong> lịch hẹn cần xử lý.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => setIsDrugModalOpen(true)}
+                className="doctor-btn doctor-btn-secondary"
+              >
+                💊 Bảng Giá Thuốc
+              </button>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="doctor-btn doctor-btn-primary"
+              >
+                🗓️ Tạo Lịch Hẹn
+              </button>
+            </div>
+          </div>
           
           {activeTab === 'dashboard' && (
-            <>
-              <p className="page-subtitle">Dưới đây là tổng quan lịch làm việc hôm nay của bạn.</p>
-              <div className="bento-grid">
-                <StatCards appointmentsCount={appointments.length || 18} />
-                <AppointmentCard
-                  isLoadingAppointments={isLoadingAppointments}
-                  appointments={appointments}
-                  setIsModalOpen={setIsModalOpen}
-                  openRecordModal={() => alert("📌 Theo quy trình mới: Vui lòng chuyển sang tab 'Bệnh nhân', chọn bệnh nhân và ấn 'Lập bệnh án' từ các lịch hẹn đã xác nhận!")}
-                  handleViewAppointmentDetails={handleViewAppointmentDetails}
-                  handleConfirmAppointment={handleConfirmAppointment}
-                  handleCancelAppointment={handleCancelAppointment}
-                  handleDeleteAppointment={handleDeleteAppointment}
-                  handleViewMedicalRecord={handleViewMedicalRecord}
-                  handleViewPatientHistory={handleViewPatientHistory}
-                />
-                <TrendCard />
-              </div>
-            </>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <StatCards appointmentsCount={appointments.length || 0} />
+              <AppointmentCard
+                isLoadingAppointments={isLoadingAppointments}
+                appointments={appointments}
+                setIsModalOpen={setIsModalOpen}
+                openRecordModal={() => alert("📌 Theo quy trình mới: Vui lòng chuyển sang tab 'Bệnh nhân', chọn bệnh nhân và ấn 'Lập bệnh án' từ các lịch hẹn đã xác nhận!")}
+                handleViewAppointmentDetails={handleViewAppointmentDetails}
+                handleConfirmAppointment={handleConfirmAppointment}
+                handleCancelAppointment={handleCancelAppointment}
+                handleDeleteAppointment={handleDeleteAppointment}
+                handleViewMedicalRecord={handleViewMedicalRecord}
+                handleViewPatientHistory={handleViewPatientHistory}
+              />
+              <TrendCard />
+            </div>
           )}
 
           {activeTab === 'appointments' && (
-            <div className="admin-card" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
-              <div className="card-header">
-                <h2><span>📅</span> Danh sách lịch hẹn</h2>
-              </div>
-              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
-                {isLoadingAppointments ? (
-                  <p style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Đang tải dữ liệu...</p>
-                ) : appointments.length > 0 ? (
-                  <table className="data-table" style={{ width: '100%' }}>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Bệnh nhân</th>
-                        <th>Ngày khám</th>
-                        <th>Giờ</th>
-                        <th>Triệu chứng</th>
-                        <th>Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {appointments.map(appt => (
-                        <tr key={appt.id}>
-                          <td>#{appt.id}</td>
-                          <td><strong>{appt.patientName || 'Chưa rõ'}</strong></td>
-                          <td>{appt.appointmentDate}</td>
-                          <td>{appt.startTime}</td>
-                          <td style={{ color: '#64748b', fontSize: '13px' }}>{appt.symptoms || appt.reason || appt.description || 'Không có ghi chú'}</td>
-                          <td>
-                            <span className={`status-badge ${appt.status === 'PENDING' ? 'pending' : appt.status === 'CANCELLED' ? 'cancelled' : 'confirmed'}`}>
-                              {appt.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>📭 Chưa có lịch hẹn nào.</p>
-                )}
-              </div>
+            <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+              <AppointmentCard
+                isLoadingAppointments={isLoadingAppointments}
+                appointments={appointments}
+                setIsModalOpen={setIsModalOpen}
+                openRecordModal={() => alert("📌 Theo quy trình mới: Vui lòng chuyển sang tab 'Bệnh nhân', chọn bệnh nhân và ấn 'Lập bệnh án' từ các lịch hẹn đã xác nhận!")}
+                handleViewAppointmentDetails={handleViewAppointmentDetails}
+                handleConfirmAppointment={handleConfirmAppointment}
+                handleCancelAppointment={handleCancelAppointment}
+                handleDeleteAppointment={handleDeleteAppointment}
+                handleViewMedicalRecord={handleViewMedicalRecord}
+                handleViewPatientHistory={handleViewPatientHistory}
+              />
             </div>
           )}
 
           {activeTab === 'patients' && (
-            <div className="admin-card" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
-              <div className="card-header">
-                <h2><span>👥</span> Bệnh nhân của tôi</h2>
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)', overflow: 'hidden', animation: 'fadeIn 0.3s ease-in-out' }}>
+              <div className="doctor-card-toolbar">
+                <h2 className="doctor-card-title">
+                  <span>👥</span> Danh Sách Bệnh Nhân Quản Lý ({patients.length})
+                </h2>
+                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                  Danh sách bệnh nhân thuộc phòng khám của bạn
+                </div>
               </div>
-              <div className="table-responsive" style={{ padding: '0 20px 20px 20px' }}>
-                <table className="admin-table" style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left' }}>
+              
+              <div className="doctor-table-container">
+                <table className="doctor-table">
                   <thead>
-                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                      <th style={{ padding: '12px 15px', width: '10%', textAlign: 'center', color: '#475569' }}>ID</th>
-                      <th style={{ padding: '12px 15px', width: '15%', color: '#475569' }}>Mã BN</th>
-                      <th style={{ padding: '12px 15px', width: '25%', color: '#475569' }}>Họ và Tên</th>
-                      <th style={{ padding: '12px 15px', width: '25%', color: '#475569' }}>Email</th>
-                      <th style={{ padding: '12px 15px', width: '25%', textAlign: 'center', color: '#475569' }}>Hành động</th>
+                    <tr>
+                      <th style={{ width: '8%', textAlign: 'center' }}>ID</th>
+                      <th style={{ width: '15%' }}>Mã Bệnh Nhân</th>
+                      <th style={{ width: '32%' }}>Họ và Tên Bệnh Nhân</th>
+                      <th style={{ width: '25%' }}>Email / Liên Hệ</th>
+                      <th style={{ width: '20%', textAlign: 'center' }}>Hành Động Chuyên Môn</th>
                     </tr>
                   </thead>
                   <tbody>
                     {patients.length > 0 ? patients.map((patient, index) => (
-                      <tr key={patient.id || patient.userId || patient.patientId || index} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                        <td style={{ padding: '16px 15px', textAlign: 'center', color: '#64748b', fontWeight: '500' }}>#{patient.id || patient.userId || patient.patientId}</td>
-                        <td style={{ padding: '16px 15px', color: '#334155' }}>
-                          {patient.code || patient.patientCode || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Chưa có mã</span>}
+                      <tr key={patient.id || patient.userId || patient.patientId || index}>
+                        <td style={{ textAlign: 'center', color: '#64748b', fontWeight: '700' }}>#{patient.id || patient.userId || patient.patientId}</td>
+                        <td>
+                          <span style={{ padding: '4px 10px', background: '#eff6ff', color: '#0f6eff', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                            {patient.code || patient.patientCode || `BN-${1000 + (patient.id || index)}`}
+                          </span>
                         </td>
-                        <td style={{ padding: '16px 15px' }}>
-                          <strong style={{ color: '#0f172a', fontSize: '15px' }}>{patient.name || patient.fullName || patient.patientName || patient.username}</strong>
+                        <td>
+                          <div className="doctor-patient-pill">
+                            <img 
+                              src={`https://api.dicebear.com/8.x/adventurer/svg?seed=patient${patient.id || index}`} 
+                              alt="Avatar"
+                              className="doctor-patient-avatar" 
+                            />
+                            <div>
+                              <div className="doctor-patient-name">{patient.name || patient.fullName || patient.patientName || patient.username}</div>
+                              <div className="doctor-patient-sub">Bệnh nhân chính thức</div>
+                            </div>
+                          </div>
                         </td>
-                        <td style={{ padding: '16px 15px', color: '#334155' }}>
-                          {patient.email || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Chưa cập nhật</span>}
+                        <td style={{ color: '#475569' }}>
+                          {patient.email || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Chưa cập nhật email</span>}
                         </td>
-                        <td style={{ padding: '16px 15px' }}>
-                          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                             <button 
                               onClick={() => openPatientAppointmentsModal(patient)}
-                              style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}
+                              className="doctor-btn doctor-btn-success"
+                              style={{ padding: '8px 14px', fontSize: '0.825rem' }}
                             >
-                              🏥 Lịch hẹn & Khám
+                              🏥 Lịch Hẹn & Khám
                             </button>
                             <button 
                               onClick={() => handleViewPatientHistory(patient.id || patient.userId || patient.patientId)}
-                              style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' }}
+                              className="doctor-btn doctor-btn-purple"
+                              style={{ padding: '8px 14px', fontSize: '0.825rem' }}
                             >
-                              📜 Sổ bệnh án
+                              📜 Sổ Bệnh Án
                             </button>
                           </div>
                         </td>
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-                          📭 Hiện chưa có bệnh nhân nào trong danh sách của bạn.
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+                          <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
+                          <p style={{ margin: 0, fontWeight: '600' }}>Hiện chưa có bệnh nhân nào được phân công trong danh sách của bạn.</p>
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'statistics' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.3s ease-in-out' }}>
+              <StatCards appointmentsCount={appointments.length || 0} />
+              <TrendCard />
             </div>
           )}
         </div>
@@ -492,7 +515,10 @@ const handleCancelAppointment = async (id) => {
       {isRecordModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 14000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Lập bệnh án & Kê đơn</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>🩺 Lập bệnh án & Kê đơn</h3>
+              <button onClick={() => setIsRecordModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>👤 Bệnh nhân:</strong> {apptDetails?.patientName || 'Chưa rõ'}</p>
               <p style={{ margin: 0, fontSize: '14px', color: '#ef4444' }}><strong>⚠️ Triệu chứng:</strong> {apptDetails?.symptom || apptDetails?.symptoms || apptDetails?.reason || apptDetails?.description || 'Bệnh nhân không ghi chú triệu chứng.'}</p>
@@ -524,9 +550,8 @@ const handleCancelAppointment = async (id) => {
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px', gap: '10px' }}>
-              <button onClick={() => setIsRecordModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
-              <button onClick={handleSaveMedicalRecord} style={{ padding: '8px 16px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Lưu Bệnh Án</button>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+              <button onClick={handleSaveMedicalRecord} style={{ padding: '12px 36px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', boxShadow: '0 4px 14px rgba(15, 110, 255, 0.35)' }}>Lưu Bệnh Án</button>
             </div>
           </div>
         </div>
@@ -535,7 +560,10 @@ const handleCancelAppointment = async (id) => {
       {isRecordDetailModalOpen && recordDetails && (
         <div className="modal" style={{ display: 'flex', zIndex: 15000 }}>
           <div className="modal-content" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+              <button onClick={() => { setIsRecordDetailModalOpen(false); setShowAddMedicineForm(false); setNewMedicines([{ medicineId: '', quantity: 1, dosage: '' }]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ textAlign: 'left', margin: '15px 0', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155' }}>
               <p style={{ margin: 0 }}><strong>Mã Lịch hẹn:</strong> #{recordDetails.appointmentID || recordDetails.appointmentId || 'Chưa rõ'}</p>
               <p style={{ margin: 0 }}><strong>Chẩn đoán:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{recordDetails.diagnosis}</span></p>
@@ -586,9 +614,6 @@ const handleCancelAppointment = async (id) => {
                 </div>
               )}
             </div>
-            <div className="modal-actions" style={{ justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button className="btn-primary" onClick={() => { setIsRecordDetailModalOpen(false); setShowAddMedicineForm(false); setNewMedicines([{ medicineId: '', quantity: 1, dosage: '' }]); }}>Đóng toàn bộ</button>
-            </div>
           </div>
         </div>
       )}
@@ -596,7 +621,10 @@ const handleCancelAppointment = async (id) => {
       {isHistoryModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 16000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '650px', maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>📜 Lịch Sử Sổ Khám Bệnh nhân #{currentSelectedPatientId}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#2563eb' }}>📜 Lịch Sử Sổ Khám Bệnh nhân #{currentSelectedPatientId}</h3>
+              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
               {historyRecords.length > 0 ? historyRecords.map((rec) => (
                 <div key={rec.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>
@@ -621,9 +649,6 @@ const handleCancelAppointment = async (id) => {
                 <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>📭 Chưa tìm thấy lịch sử lưu bệnh án nào của người bệnh này trên máy chủ.</div>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '10px 24px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
-            </div>
           </div>
         </div>
       )}
@@ -631,13 +656,13 @@ const handleCancelAppointment = async (id) => {
       {isDrugDetailModalOpen && drugDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 13000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '350px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>💊 Thông tin chi tiết thuốc</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>💊 Thông tin chi tiết thuốc</h3>
+              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
               <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{color: '#0f6eff', fontWeight: 'bold'}}>{drugDetails.name}</span></p>
               <p style={{ margin: 0 }}><strong>Đơn vị tính:</strong> {drugDetails.unit || 'Chưa cập nhật'}</p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
             </div>
           </div>
         </div>
@@ -647,9 +672,12 @@ const handleCancelAppointment = async (id) => {
       {isPatientApptModalOpen && selectedPatientForAppt && (
         <div className="modal" style={{ display: 'flex', zIndex: 13000 }}>
           <div className="modal-content" style={{ width: '700px', maxWidth: '90vw' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#0f172a' }}>
-              📋 Lịch hẹn chờ khám của: {selectedPatientForAppt.fullName || selectedPatientForAppt.name || selectedPatientForAppt.username}
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>
+                📋 Lịch hẹn chờ khám của: {selectedPatientForAppt.fullName || selectedPatientForAppt.name || selectedPatientForAppt.username}
+              </h3>
+              <button onClick={() => setIsPatientApptModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div className="table-responsive">
               <table className="data-table">
                 <thead>
@@ -694,9 +722,6 @@ const handleCancelAppointment = async (id) => {
                 <p style={{ textAlign: 'center', marginTop: '20px', color: '#64748b' }}>Bệnh nhân này hiện không có lịch hẹn nào đang ở trạng thái <strong>Đã xác nhận</strong> để khám.</p>
               )}
             </div>
-            <div className="modal-actions" style={{ justifyContent: 'flex-end', marginTop: '15px' }}>
-              <button className="btn-outline" onClick={() => setIsPatientApptModalOpen(false)}>Đóng</button>
-            </div>
           </div>
         </div>
       )}
@@ -704,7 +729,10 @@ const handleCancelAppointment = async (id) => {
       {isDeptModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 12000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🏥 Danh sách Phòng ban / Chuyên khoa</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>🏥 Danh sách Phòng ban / Chuyên khoa</h3>
+              <button onClick={() => setIsDeptModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {departments.length > 0 ? departments.map((dept, index) => {
                 const deptName = dept.name || dept.departmentName || dept.department_name || "Chưa có tên";
@@ -717,9 +745,6 @@ const handleCancelAppointment = async (id) => {
               }) : (
                 <p style={{ textAlign: 'center', color: '#64748b' }}>Không có dữ liệu phòng ban!</p>
               )}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsDeptModalOpen(false)} style={{ padding: '8px 20px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
             </div>
           </div>
         </div>

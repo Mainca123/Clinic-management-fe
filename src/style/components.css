@@ -249,7 +249,7 @@
 
 /* Appointment Card (Large) */
 .appointment-card {
-    grid-column: span 3; /* Chiếm 3 cột */
+    grid-column: span 4; /* Chiếm toàn bộ 4 cột sau khi bỏ TrendCard */
     grid-row: span 2; /* Cao 2 hàng */
 }
 

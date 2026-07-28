@@ -56,7 +56,6 @@ const DoctorExam = () => {
       {/* MAIN CONTENT */}
       <main className="main-content">
         <header className="main-header">
-          <button className="btn-action secondary" onClick={handleGoBack}>← Quay lại</button>
           <div className="user-profile">
             <span className="user-name">Đang khám: <b>Nguyễn Văn Mạnh</b></span>
           </div>
@@ -156,9 +155,9 @@ const DoctorExam = () => {
                   <input type="date" className="custom-input" style={{ width: '200px' }} />
                 </div>
 
-                <div className="form-actions" style={{ display: 'flex', gap: '10px', marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                  <button className="btn-action secondary" style={{ flex: 1 }}>Lưu nháp</button>
-                  <button className="btn-action" style={{ flex: 2 }} onClick={() => alert('Đã lưu bệnh án thành công!')}>
+                <div className="form-actions" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+                  <button className="btn-action secondary" style={{ minWidth: '120px' }}>Lưu nháp</button>
+                  <button className="btn-action" style={{ minWidth: '180px' }} onClick={() => alert('Đã lưu bệnh án thành công!')}>
                     Hoàn tất & Lưu bệnh án
                   </button>
                 </div>
