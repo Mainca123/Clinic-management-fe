@@ -301,34 +301,27 @@ const handleCancelAppointment = async (id) => {
         <Header user={user} />
         <div className="page-content">
           
-          {/* GREETING HEADER BANNER */}
-          <div className="doctor-page-header">
-            <div>
-              <h1 className="doctor-greeting">
-                👋 Chào mừng, BS. {user?.fullName || user?.username || 'Bác sĩ'}!
-              </h1>
-              <p className="doctor-subgreeting">
-                Chuyên khoa: <strong style={{ color: '#0f6eff' }}>{user?.specialization || 'Đa khoa'}</strong> · Hôm nay bạn có <strong style={{ color: '#10b981' }}>{appointments.length}</strong> lịch hẹn cần xử lý.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={() => setIsDrugModalOpen(true)}
-                className="doctor-btn doctor-btn-secondary"
-              >
-                💊 Bảng Giá Thuốc
-              </button>
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="doctor-btn doctor-btn-primary"
-              >
-                🗓️ Tạo Lịch Hẹn
-              </button>
-            </div>
-          </div>
-          
           {activeTab === 'dashboard' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* GREETING HEADER BANNER */}
+              <div className="doctor-page-header">
+                <div>
+                  <h1 className="doctor-greeting">
+                    👋 Chào mừng, BS. {user?.fullName || user?.username || 'Bác sĩ'}!
+                  </h1>
+                  <p className="doctor-subgreeting">
+                    Chuyên khoa: <strong style={{ color: '#0f6eff' }}>{user?.specialization || 'Đa khoa'}</strong> · Hôm nay bạn có <strong style={{ color: '#10b981' }}>{appointments.length}</strong> lịch hẹn cần xử lý.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={() => setIsDrugModalOpen(true)}
+                    className="doctor-btn doctor-btn-secondary"
+                  >
+                    💊 Bảng Giá Thuốc
+                  </button>
+                </div>
+              </div>
               <StatCards appointmentsCount={appointments.length || 0} />
               <AppointmentCard
                 isLoadingAppointments={isLoadingAppointments}
