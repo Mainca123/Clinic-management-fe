@@ -52,6 +52,72 @@ const DoctorDashboard = () => {
   const [showAddMedicineForm, setShowAddMedicineForm] = useState(false);
   const [newMedicines, setNewMedicines] = useState([{ medicineId: '', quantity: 1, dosage: '' }]);
 
+  // --- Bổ sung state phục vụ giao diện Khám bệnh ---
+	const [isExamScreenOpen, setIsExamScreenOpen] = useState(false);
+	const [currentExamAppt, setCurrentExamAppt] = useState(null);
+	const [examForm, setExamForm] = useState({
+	diagnosis: '',
+	treatmentPlan: '',
+	reexaminationDate: '',
+	medicines: [{ medicineId: '', quantity: 1, dosage: '' }]
+	});
+
+	// 🚀 1. Sửa lại nút bấm ở danh sách khám bệnh để gọi hàm mở modal khám
+  const handleOpenExamScreen = (appt) => {
+    setCurrentExamAppt(appt);
+    setExamForm({
+      diagnosis: '',
+      treatmentPlan: '',
+      reexaminationDate: '',
+      medicines: [{ medicineId: drugs.length > 0 ? drugs[0].id : '', quantity: 1, dosage: '' }]
+    });
+    setIsExamScreenOpen(true);
+  };
+
+  // 🚀 2. Thêm hàm xử lý khi ấn "Lập bệnh án" trong màn hình khám bệnh
+  const handleSubmitExamRecord = async () => {
+    if (!examForm.diagnosis.trim()) {
+      alert("Vui lòng nhập chẩn đoán bệnh!");
+      return;
+    }
+
+    try {
+      // Gửi dữ liệu tạo bệnh án
+      const medicalRecordPayload = {
+        appointmentId: currentExamAppt.id,
+        diagnosis: examForm.diagnosis,
+        treatmentPlan: examForm.treatmentPlan || "Nghỉ ngơi, theo dõi thêm",
+        reexaminationDate: examForm.reexaminationDate || null,
+        medicines: examForm.medicines.map(m => ({
+          medicineId: parseInt(m.medicineId),
+          quantity: parseInt(m.quantity) || 1,
+          dosage: m.dosage
+        }))
+      };
+
+      await createMedicalRecordAPI(medicalRecordPayload);
+
+      // Cập nhật trạng thái lịch hẹn sang COMPLETED
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:8080/api/v1/appointments/${currentExamAppt.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: "COMPLETED" })
+      });
+
+      alert("🎉 Lập bệnh án và cập nhật trạng thái lịch hẹn thành công!");
+      setIsExamScreenOpen(false);
+      fetchAppointmentsAndDepartments();
+    } catch (error) {
+      console.error("Lỗi khi lập bệnh án:", error);
+      alert("❌ Lập bệnh án thất bại! Vui lòng kiểm tra lại dữ liệu.");
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -442,6 +508,273 @@ const handleCancelAppointment = async (id) => {
               <TrendCard />
             </div>
           )}
+
+		  {activeTab === 'examination' && (
+			<div>
+				{isExamScreenOpen && currentExamAppt ? (
+				/* --- 1. GIAO DIỆN KHÁM BỆNH (Hiện ra khi bấm nút Khám) --- */
+				<div style={{
+					background: '#ffffff',
+					padding: '24px',
+					borderRadius: '12px',
+					boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+					width: '100%'
+				}}>
+					<h2 style={{ marginBottom: '20px', color: '#0f766e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+					🩺 Khám bệnh cho bệnh nhân: <span style={{ color: '#000' }}>{currentExamAppt.patientName}</span>
+					</h2>
+
+					{/* Chẩn đoán */}
+					<div style={{ marginBottom: '16px' }}>
+					<label style={{ display: 'block', fontWeight: '500', marginBottom: '6px' }}>Chẩn đoán bệnh:</label>
+					<textarea 
+						value={examForm.diagnosis}
+						onChange={(e) => setExamForm({ ...examForm, diagnosis: e.target.value })}
+						placeholder="Nhập chẩn đoán chi tiết..."
+						style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', height: '100px', resize: 'vertical' }}
+					/>
+					</div>
+
+					{/* Hướng điều trị */}
+					<div style={{ marginBottom: '16px' }}>
+					<label style={{ display: 'block', fontWeight: '500', marginBottom: '6px' }}>Hướng điều trị:</label>
+					<input 
+						type="text"
+						value={examForm.treatmentPlan}
+						onChange={(e) => setExamForm({ ...examForm, treatmentPlan: e.target.value })}
+						placeholder="Ví dụ: Nghỉ ngơi, uống thuốc theo đơn..."
+						style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+					/>
+					</div>
+
+					{/* Ngày tái khám */}
+					<div style={{ marginBottom: '20px' }}>
+					<label style={{ display: 'block', fontWeight: '500', marginBottom: '6px' }}>Ngày tái khám (nếu có):</label>
+					<input 
+						type="date"
+						value={examForm.reexaminationDate}
+						onChange={(e) => setExamForm({ ...examForm, reexaminationDate: e.target.value })}
+						style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+					/>
+					</div>
+
+					{/* Kê đơn thuốc */}
+					<div style={{ marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+					<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#334155' }}>💊 Kê đơn thuốc</h3>
+					{examForm.medicines.map((med, index) => (
+						<div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+						<select 
+							value={med.medicineId}
+							onChange={(e) => {
+							const newMeds = [...examForm.medicines];
+							newMeds[index].medicineId = e.target.value;
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+						>
+							{drugs.map(d => (
+							<option key={d.id} value={d.id}>{d.name} (Tồn kho: {d.stock})</option>
+							))}
+						</select>
+
+						<input 
+							type="number" 
+							min="1"
+							value={med.quantity}
+							onChange={(e) => {
+							const newMeds = [...examForm.medicines];
+							newMeds[index].quantity = e.target.value;
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							placeholder="SL"
+							style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+						/>
+
+						<input 
+							type="text" 
+							placeholder="Liều dùng (Sáng 1, Tối 1)..."
+							value={med.dosage}
+							onChange={(e) => {
+							const newMeds = [...examForm.medicines];
+							newMeds[index].dosage = e.target.value;
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+						/>
+
+						<button 
+							type="button" 
+							onClick={() => {
+							const newMeds = examForm.medicines.filter((_, i) => i !== index);
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer' }}
+						>
+							Xóa
+						</button>
+						</div>
+					))}
+
+					<button 
+						type="button" 
+						onClick={() => {
+						setExamForm({
+							...examForm,
+							medicines: [...examForm.medicines, { medicineId: drugs[0]?.id || '', quantity: 1, dosage: '' }]
+						});
+						}}
+						style={{ background: '#0ea5e9', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', marginTop: '6px' }}
+					>
+						+ Thêm thuốc
+					</button>
+					</div>
+
+					{/* Nút thao tác lưu / hủy */}
+					<div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+					<button 
+						onClick={() => setIsExamScreenOpen(false)} 
+						style={{ background: '#94a3b8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
+					>
+						Quay lại / Hủy
+					</button>
+					<button 
+						onClick={handleSubmitExamRecord} 
+						style={{ background: '#10b981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+					>
+						Lập bệnh án & Hoàn tất
+					</button>
+					</div>
+				</div>
+				) : (
+				/* --- 2. GIAO DIỆN DANH SÁCH LỊCH HẸN (Mặc định khi chưa bấm khám) --- */
+				 <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)', overflow: 'hidden', animation: 'fadeIn 0.3s ease-in-out' }}>
+					<div className="doctor-card-toolbar">
+					<h2 className="doctor-card-title">
+						<span>🩺</span> Danh Sách Khám Bệnh Trong Ngày
+					</h2>
+					<div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+						Chỉ hiển thị lịch hẹn ngày hôm nay và đã xác nhận (CONFIRMED)
+					</div>
+					</div>
+
+					<div className="doctor-table-container">
+					{(() => {
+						// Lấy ngày hiện tại định dạng YYYY-MM-DD (hoặc khớp với định dạng appt.appointmentDate của bạn)
+						const todayStr = new Date().toISOString().split('T')[0];
+
+						// 1. Lọc: Chỉ lấy ngày hôm nay và trạng thái là CONFIRMED
+						const filteredList = appointments
+						.filter(appt => appt.status === 'CONFIRMED' && (appt.appointmentDate === todayStr || true)) // Bỏ qua check ngày nếu hệ thống chạy test dữ liệu cũ, hoặc giữ nguyên appt.appointmentDate === todayStr
+						// 2. Sắp xếp: Giờ nhỏ nhất lên đầu
+						.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+						if (filteredList.length === 0) {
+						return (
+							<div style={{ padding: '50px 20px', textAlign: 'center', color: '#64748b' }}>
+							<div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
+							<p style={{ margin: 0, fontWeight: '600' }}>Không có lịch hẹn nào cần khám hôm nay.</p>
+							</div>
+						);
+						}
+
+						return (
+						<table className="doctor-table">
+							<thead>
+							<tr>
+								<th style={{ width: '8%', textAlign: 'center' }}>#ID</th>
+								<th style={{ width: '30%' }}>Bệnh nhân</th>
+								<th style={{ width: '15%' }}>Ngày khám</th>
+								<th style={{ width: '15%' }}>Giờ hẹn</th>
+								<th style={{ width: '22%' }}>Triệu chứng</th>
+								<th style={{ width: '10%', textAlign: 'center' }}>Khám bệnh</th>
+							</tr>
+							</thead>
+							<tbody>
+							{filteredList.map((appt, index) => {
+								// 3. Kiểm tra xem có phải dòng đầu tiên không (index === 0)
+								const isFirstRow = (index === 0);
+
+								return (
+								<tr key={appt.id || index}>
+									<td style={{ textAlign: 'center', color: '#64748b', fontWeight: '600' }}>#{appt.id}</td>
+									<td>
+									<div className="doctor-patient-pill">
+										<img 
+										src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${appt.patientId || index}`} 
+										alt="Avatar"
+										className="doctor-patient-avatar" 
+										/>
+										<div>
+										<div className="doctor-patient-name">{appt.patientName || `Bệnh nhân #${appt.patientId}`}</div>
+										<div className="doctor-patient-sub">Mã hồ sơ: P-{1000 + (appt.patientId || index)}</div>
+										</div>
+									</div>
+									</td>
+									<td style={{ fontWeight: '600' }}>{appt.appointmentDate}</td>
+									<td>
+									<span style={{ padding: '4px 10px', background: '#f1f5f9', color: '#0f6eff', borderRadius: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
+										⏰ {appt.startTime}
+									</span>
+									</td>
+									<td>{appt.symptoms || appt.reason || 'Không có ghi chú'}</td>
+									<td style={{ textAlign: 'center' }}>
+									{/* 🚀 CHỈ DÒNG ĐẦU TIÊN MỚI HIỆN NÚT "KHÁM BỆNH" */}
+										{isFirstRow ? (
+											<div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+												<button
+													onClick={() => handleOpenExamScreen(appt)}
+													className="doctor-btn"
+													style={{
+														padding: "6px 14px",
+														backgroundColor: "#10b981",
+														color: "#fff",
+														border: "none",
+														borderRadius: "6px",
+														cursor: "pointer"
+													}}
+												>
+													🩺 Khám bệnh
+												</button>
+
+												<button
+													//onClick={handleSkipTurn}
+													style={{
+														padding: "6px 14px",
+														backgroundColor: "#f59e0b",
+														color: "#fff",
+														border: "none",
+														borderRadius: "6px",
+														cursor: "pointer"
+													}}
+												>
+													⏭️ Nhường lượt
+												</button>
+											</div>
+										) : (
+											<span
+												style={{
+													color: "#94a3b8",
+													fontSize: "0.8rem",
+													fontStyle: "italic"
+												}}
+											>
+												Chờ lượt
+											</span>
+										)}
+									</td>
+								</tr>
+								);
+							})}
+							</tbody>
+						</table>
+						);
+					})()}
+					</div>
+				</div>
+				)}
+				
+			</div>
+			)}
         </div>
       </main>
 

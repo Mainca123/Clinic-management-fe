@@ -1,19 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const AppointmentCard = ({ 
   isLoadingAppointments, 
   appointments, 
-  setIsModalOpen, 
-  openRecordModal, 
   handleViewAppointmentDetails, 
   handleConfirmAppointment, 
-  handleCancelAppointment, 
-  handleViewMedicalRecord, 
-  handleViewPatientHistory 
+  handleCancelAppointment 
 }) => {
-  const [searchRecordId, setSearchRecordId] = useState('');
-  const [patientHistoryId, setPatientHistoryId] = useState('');
-
   return (
     <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)', overflow: 'hidden' }}>
       
@@ -22,51 +15,6 @@ const AppointmentCard = ({
         <h2 className="doctor-card-title">
           <span>📅</span> Lịch Hẹn Sắp Tới
         </h2>
-        
-        <div className="doctor-toolbar-actions">
-          {/* Tra cứu Sổ khám bệnh cũ theo ID bệnh nhân */}
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <input 
-              type="number" 
-              placeholder="Mã BN (ID)..." 
-              value={patientHistoryId} 
-              onChange={e => setPatientHistoryId(e.target.value)} 
-              className="doctor-search-input"
-              style={{ width: '130px' }}
-            />
-            <button 
-              onClick={() => handleViewPatientHistory(patientHistoryId)} 
-              className="doctor-btn doctor-btn-purple"
-            >
-              📒 Xem Sổ Khám
-            </button>
-          </div>
-
-          {/* Tra cứu bệnh án lẻ */}
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <input 
-              type="number" 
-              placeholder="ID Bệnh án..." 
-              value={searchRecordId} 
-              onChange={e => setSearchRecordId(e.target.value)} 
-              className="doctor-search-input"
-              style={{ width: '110px' }}
-            />
-            <button 
-              onClick={() => handleViewMedicalRecord(searchRecordId)} 
-              className="doctor-btn doctor-btn-success"
-            >
-              🔍 Tra Cứu BA
-            </button>
-          </div>
-          
-          <button 
-            onClick={() => setIsModalOpen(true)} 
-            className="doctor-btn doctor-btn-primary"
-          >
-            ➕ Thêm Lịch Hẹn
-          </button>
-        </div>
       </div>
 
       {/* TABLE CONTENT */}
