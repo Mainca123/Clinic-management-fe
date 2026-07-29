@@ -431,8 +431,17 @@ const PatientAppointments = () => {
               <div style={{ padding:'22px 26px 14px', borderBottom:'1px solid #f1f5f9', position:'sticky', top:0, background:'#fff', zIndex:10, borderRadius:'20px 20px 0 0' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'18px' }}>
                   <h3 style={{ margin:0, fontSize:'19px', fontWeight:'800', color:'#0f172a' }}>🗓️ Đặt lịch khám mới</h3>
-                  <button onClick={() => { setIsModalOpen(false); resetWizard(); }}
-                    style={{ background:'#f1f5f9', border:'1px solid #cbd5e1', borderRadius:'8px', padding:'6px 12px', cursor:'pointer', fontSize:'13px', color:'#334155', fontWeight:'600' }}>← Quay lại</button>
+                  <button onClick={() => {
+                    if (step > 1 && step <= 4) {
+                      setWStep(step - 1);
+                    } else {
+                      setIsModalOpen(false);
+                      resetWizard();
+                    }
+                  }}
+                    style={{ background:'#f1f5f9', border:'1px solid #cbd5e1', borderRadius:'8px', padding:'6px 12px', cursor:'pointer', fontSize:'13px', color:'#334155', fontWeight:'600' }}>
+                    {step > 1 && step <= 4 ? '← Quay lại' : '✕ Đóng'}
+                  </button>
                 </div>
                 {/* Step bar */}
                 {step <= 4 && (
