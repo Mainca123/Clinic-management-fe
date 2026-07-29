@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUserAPI } from '../../services/authService';
 import { getAllDepartmentsAPI } from '../../services/departmentService';
-import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, confirmAppointmentAPI, cancelAppointmentAPI, deleteAppointmentAPI } from '../../services/appointmentService';
+import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, confirmAppointmentAPI, cancelAppointmentAPI, deleteAppointmentAPI, completeAppointmentAPI, updateAppointmentStatusAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, getDrugDetailsAPI } from '../../services/drugService';
 import { createMedicalRecordAPI, getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, addMedicinesToRecordAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
 import { getPatientsByDoctorAPI } from '../../services/appointmentService'; 
@@ -119,19 +119,11 @@ const DoctorDashboard = () => {
         }))
       };
 
+      // 1. Gọi API tạo bệnh án mới (Tầng Service: medicalRecordService.js)
       await createMedicalRecordAPI(medicalRecordPayload);
 
-      // Cập nhật trạng thái lịch hẹn sang COMPLETED
-      const token = localStorage.getItem('token');
-      await fetch(`http://localhost:8080/api/v1/appointments/${currentExamAppt.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: "COMPLETED" })
-      });
+      // 2. Cập nhật trạng thái lịch hẹn sang COMPLETED (Tầng Service: appointmentService.js)
+      await completeAppointmentAPI(currentExamAppt.id);
 
       alert("🎉 Lập bệnh án và cập nhật trạng thái lịch hẹn thành công!");
       setIsExamScreenOpen(false);

@@ -26,6 +26,17 @@ export const cancelAppointmentAPI = async (id, reasonText) => {
     return await api.patch(`/appointments/${id}/status`, payload);
 };
 
+// Cập nhật trạng thái lịch hẹn chung (PATCH /api/v1/appointments/:id/status)
+export const updateAppointmentStatusAPI = async (id, status, reason = '') => {
+    const payload = { status, reason };
+    return await api.patch(`/appointments/${id}/status`, payload);
+};
+
+// Chuyển trạng thái lịch hẹn sang COMPLETED khi khám xong
+export const completeAppointmentAPI = async (id) => {
+    return await updateAppointmentStatusAPI(id, 'COMPLETED');
+};
+
 
 // Lấy lịch hẹn theo bác sĩ và ngày để kiểm tra slot đã đặt
 export const getAppointmentsByDoctorAndDateAPI = async (doctorId, date) => {
