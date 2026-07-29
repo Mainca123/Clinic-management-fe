@@ -18,9 +18,9 @@ const Sidebar = ({ handleLogout, activeTab, setActiveTab }) => {
           <span className="icon"> 📅 </span> Lịch hẹn
         </Link>
 
-		<Link to="#" className={`nav-item ${activeTab === 'examination' ? 'active' : ''}`} onClick={() => setActiveTab('examination')}>
-			<span className="icon"> 🩺 </span> Khám bệnh
-		</Link>	
+        <Link to="#" className={`nav-item ${activeTab === 'examination' ? 'active' : ''}`} onClick={() => setActiveTab('examination')}>
+          <span className="icon"> 🩺 </span> Khám bệnh
+        </Link>
 
         <Link to="#" className={`nav-item ${activeTab === 'patients' ? 'active' : ''}`} onClick={() => setActiveTab('patients')}>
           <span className="icon"> 👤 </span> Bệnh nhân

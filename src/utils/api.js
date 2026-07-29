@@ -1,44 +1,57 @@
 import axios from 'axios';
+import { handleMockApi } from '../services/mockAdapter';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8080/api/v1', // Backend Docker đang chạy ở port 8088
-	// baseURL: 'https://clinic-management-rfez.onrender.com/api/v1',
-    headers: {
-        'Content-Type': 'application/json',
-    }
+  baseURL: 'http://localhost:8080/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
+
 api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
-// 🚀 THÊM ĐOẠN NÀY: Bộ tự động đánh chặn phản hồi từ Backend (Response Interceptor)
+// 🚀 Bộ Đánh Chặn Phản Hồi + Giả Lập API Toàn Diện
 api.interceptors.response.use(
   (response) => {
-    // Nếu API chạy thành công ổn định thì cứ cho đi qua bình thường
     return response;
   },
-  (error) => {
-    // Nếu Backend trả về lỗi 401 (Hết hạn token / Token fake)
-    if (error.response && error.response.status === 401) {
-      console.warn("Cảnh báo: Token hết hạn hoặc không hợp lệ! Tự động dọn rác localStorage...");
-      
-      localStorage.removeItem('token'); // 🧼 Xóa sạch token "bóng ma" ngay lập tức
+  async (error) => {
+    const config = error.config || {};
+    
+    // Nếu Backend không phản hồi (Lỗi mạng / Chưa bật Server / 404 / 500) -> Chuyển sang Bộ Giả Lập (Mock API)
+    if (!error.response || error.code === 'ERR_NETWORK' || error.message?.includes('Network Error') || error.response?.status >= 404) {
+      console.warn("⚠️ Backend không phản hồi -> Sử dụng Bộ Giả Lập Dữ Liệu (Mock API) cho:", config.url);
+      const mockResponse = handleMockApi(config);
+      return Promise.resolve(mockResponse);
+    }
 
-      // Nếu người dùng đang ở các trang Dashboard bên trong mà bị hết hạn token, đá ngay họ ra trang Login
+    if (error.response && error.response.status === 401) {
+      const token = localStorage.getItem('token');
+      if (token && token.startsWith('mock_jwt_token_')) {
+        return Promise.resolve(handleMockApi(config));
+      }
+
+      console.warn("Cảnh báo: Token hết hạn hoặc không hợp lệ! Tự động dọn rác localStorage...");
+      localStorage.removeItem('token');
+
       const currentPath = window.location.pathname;
       if (currentPath !== '/login' && currentPath !== '/forgot-password' && currentPath !== '/register') {
         alert('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!');
         window.location.href = '/login';
       }
     }
+
     return Promise.reject(error);
   }
 );
+
 export default api;

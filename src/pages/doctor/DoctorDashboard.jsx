@@ -52,15 +52,39 @@ const DoctorDashboard = () => {
   const [showAddMedicineForm, setShowAddMedicineForm] = useState(false);
   const [newMedicines, setNewMedicines] = useState([{ medicineId: '', quantity: 1, dosage: '' }]);
 
-  // --- Bổ sung state phục vụ giao diện Khám bệnh ---
-	const [isExamScreenOpen, setIsExamScreenOpen] = useState(false);
-	const [currentExamAppt, setCurrentExamAppt] = useState(null);
-	const [examForm, setExamForm] = useState({
-	diagnosis: '',
-	treatmentPlan: '',
-	reexaminationDate: '',
-	medicines: [{ medicineId: '', quantity: 1, dosage: '' }]
-	});
+  // --- Bổ sung state & handler phục vụ giao diện Khám bệnh & Nhường lượt ---
+  const [customOrderIds, setCustomOrderIds] = useState([]);
+  const [yieldStep, setYieldStep] = useState(1);
+  const [isExamScreenOpen, setIsExamScreenOpen] = useState(false);
+  const [currentExamAppt, setCurrentExamAppt] = useState(null);
+  const [examForm, setExamForm] = useState({
+    diagnosis: '',
+    treatmentPlan: '',
+    reexaminationDate: '',
+    medicines: [{ medicineId: '', quantity: 1, dosage: '' }]
+  });
+
+  const handleYieldTurn = (currentQueue) => {
+    if (!currentQueue || currentQueue.length < 2) {
+      alert("⚠️ Danh sách cần ít nhất 2 ca khám để thực hiện nhường lượt!");
+      return;
+    }
+
+    const targetIndex = yieldStep;
+
+    if (targetIndex >= currentQueue.length) {
+      alert("⚠️ Đã nhường lượt đến bệnh nhân cuối cùng trong danh sách!");
+      return;
+    }
+
+    const newQueue = [...currentQueue];
+    const temp = newQueue[0];
+    newQueue[0] = newQueue[targetIndex];
+    newQueue[targetIndex] = temp;
+
+    setCustomOrderIds(newQueue.map(a => a.id));
+    setYieldStep(prev => prev + 1);
+  };
 
 	// 🚀 1. Sửa lại nút bấm ở danh sách khám bệnh để gọi hàm mở modal khám
   const handleOpenExamScreen = (appt) => {
@@ -111,6 +135,8 @@ const DoctorDashboard = () => {
 
       alert("🎉 Lập bệnh án và cập nhật trạng thái lịch hẹn thành công!");
       setIsExamScreenOpen(false);
+      setYieldStep(1);
+      setCustomOrderIds([]);
       fetchAppointmentsAndDepartments();
     } catch (error) {
       console.error("Lỗi khi lập bệnh án:", error);
@@ -659,114 +685,128 @@ const handleCancelAppointment = async (id) => {
 
 					<div className="doctor-table-container">
 					{(() => {
-						// Lấy ngày hiện tại định dạng YYYY-MM-DD (hoặc khớp với định dạng appt.appointmentDate của bạn)
 						const todayStr = new Date().toISOString().split('T')[0];
 
-						// 1. Lọc: Chỉ lấy ngày hôm nay và trạng thái là CONFIRMED
-						const filteredList = appointments
-						.filter(appt => appt.status === 'CONFIRMED' && (appt.appointmentDate === todayStr || true)) // Bỏ qua check ngày nếu hệ thống chạy test dữ liệu cũ, hoặc giữ nguyên appt.appointmentDate === todayStr
-						// 2. Sắp xếp: Giờ nhỏ nhất lên đầu
-						.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+						// 1. Lọc: Lấy ngày hôm nay & CONFIRMED
+						const baseList = appointments
+							.filter(appt => appt.status === 'CONFIRMED' && (appt.appointmentDate === todayStr || true))
+							.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+						// 2. Thứ tự hiển thị theo customOrderIds nếu đã có nhường lượt
+						let filteredList = baseList;
+						if (customOrderIds.length > 0) {
+							const mapById = new Map(baseList.map(a => [a.id, a]));
+							const ordered = [];
+							customOrderIds.forEach(id => {
+								if (mapById.has(id)) {
+									ordered.push(mapById.get(id));
+									mapById.delete(id);
+								}
+							});
+							mapById.forEach(appt => ordered.push(appt));
+							filteredList = ordered;
+						}
 
 						if (filteredList.length === 0) {
-						return (
-							<div style={{ padding: '50px 20px', textAlign: 'center', color: '#64748b' }}>
-							<div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
-							<p style={{ margin: 0, fontWeight: '600' }}>Không có lịch hẹn nào cần khám hôm nay.</p>
-							</div>
-						);
+							return (
+								<div style={{ padding: '50px 20px', textAlign: 'center', color: '#64748b' }}>
+									<div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
+									<p style={{ margin: 0, fontWeight: '600' }}>Không có lịch hẹn nào cần khám hôm nay.</p>
+								</div>
+							);
 						}
 
 						return (
-						<table className="doctor-table">
-							<thead>
-							<tr>
-								<th style={{ width: '8%', textAlign: 'center' }}>#ID</th>
-								<th style={{ width: '30%' }}>Bệnh nhân</th>
-								<th style={{ width: '15%' }}>Ngày khám</th>
-								<th style={{ width: '15%' }}>Giờ hẹn</th>
-								<th style={{ width: '22%' }}>Triệu chứng</th>
-								<th style={{ width: '10%', textAlign: 'center' }}>Khám bệnh</th>
-							</tr>
-							</thead>
-							<tbody>
-							{filteredList.map((appt, index) => {
-								// 3. Kiểm tra xem có phải dòng đầu tiên không (index === 0)
-								const isFirstRow = (index === 0);
+							<table className="doctor-table">
+								<thead>
+									<tr>
+										<th style={{ width: '8%', textAlign: 'center' }}>#ID</th>
+										<th style={{ width: '30%' }}>Bệnh nhân</th>
+										<th style={{ width: '15%' }}>Ngày khám</th>
+										<th style={{ width: '15%' }}>Giờ hẹn</th>
+										<th style={{ width: '18%' }}>Triệu chứng</th>
+										<th style={{ width: '14%', textAlign: 'center' }}>Khám bệnh</th>
+									</tr>
+								</thead>
+								<tbody>
+									{filteredList.map((appt, index) => {
+										const isFirstRow = (index === 0);
 
-								return (
-								<tr key={appt.id || index}>
-									<td style={{ textAlign: 'center', color: '#64748b', fontWeight: '600' }}>#{appt.id}</td>
-									<td>
-									<div className="doctor-patient-pill">
-										<img 
-										src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${appt.patientId || index}`} 
-										alt="Avatar"
-										className="doctor-patient-avatar" 
-										/>
-										<div>
-										<div className="doctor-patient-name">{appt.patientName || `Bệnh nhân #${appt.patientId}`}</div>
-										<div className="doctor-patient-sub">Mã hồ sơ: P-{1000 + (appt.patientId || index)}</div>
-										</div>
-									</div>
-									</td>
-									<td style={{ fontWeight: '600' }}>{appt.appointmentDate}</td>
-									<td>
-									<span style={{ padding: '4px 10px', background: '#f1f5f9', color: '#0f6eff', borderRadius: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
-										⏰ {appt.startTime}
-									</span>
-									</td>
-									<td>{appt.symptoms || appt.reason || 'Không có ghi chú'}</td>
-									<td style={{ textAlign: 'center' }}>
-									{/* 🚀 CHỈ DÒNG ĐẦU TIÊN MỚI HIỆN NÚT "KHÁM BỆNH" */}
-										{isFirstRow ? (
-											<div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-												<button
-													onClick={() => handleOpenExamScreen(appt)}
-													className="doctor-btn"
-													style={{
-														padding: "6px 14px",
-														backgroundColor: "#10b981",
-														color: "#fff",
-														border: "none",
-														borderRadius: "6px",
-														cursor: "pointer"
-													}}
-												>
-													🩺 Khám bệnh
-												</button>
+										return (
+											<tr key={appt.id || index}>
+												<td style={{ textAlign: 'center', color: '#64748b', fontWeight: '600' }}>#{appt.id}</td>
+												<td>
+													<div className="doctor-patient-pill">
+														<img 
+															src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${appt.patientId || index}`} 
+															alt="Avatar"
+															className="doctor-patient-avatar" 
+														/>
+														<div>
+															<div className="doctor-patient-name">{appt.patientName || `Bệnh nhân #${appt.patientId}`}</div>
+															<div className="doctor-patient-sub">Mã hồ sơ: P-{1000 + (appt.patientId || index)}</div>
+														</div>
+													</div>
+												</td>
+												<td style={{ fontWeight: '600' }}>{appt.appointmentDate}</td>
+												<td>
+													<span style={{ padding: '4px 10px', background: '#f1f5f9', color: '#0f6eff', borderRadius: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
+														⏰ {appt.startTime}
+													</span>
+												</td>
+												<td>{appt.symptoms || appt.reason || 'Không có ghi chú'}</td>
+												<td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+													{isFirstRow ? (
+														<div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+															<button
+																onClick={() => handleOpenExamScreen(appt)}
+																className="doctor-btn"
+																style={{
+																	padding: '6px 14px',
+																	backgroundColor: '#10b981',
+																	color: '#fff',
+																	border: 'none',
+																	borderRadius: '6px',
+																	cursor: 'pointer',
+																	whiteSpace: 'nowrap'
+																}}
+															>
+																🩺 Khám bệnh
+															</button>
 
-												<button
-													//onClick={handleSkipTurn}
-													style={{
-														padding: "6px 14px",
-														backgroundColor: "#f59e0b",
-														color: "#fff",
-														border: "none",
-														borderRadius: "6px",
-														cursor: "pointer"
-													}}
-												>
-													⏭️ Nhường lượt
-												</button>
-											</div>
-										) : (
-											<span
-												style={{
-													color: "#94a3b8",
-													fontSize: "0.8rem",
-													fontStyle: "italic"
-												}}
-											>
-												Chờ lượt
-											</span>
-										)}
-									</td>
-								</tr>
-								);
-							})}
-							</tbody>
-						</table>
+															<button
+																onClick={() => handleYieldTurn(filteredList)}
+																className="doctor-btn"
+																style={{
+																	padding: '6px 14px',
+																	backgroundColor: '#f59e0b',
+																	color: '#fff',
+																	border: 'none',
+																	borderRadius: '6px',
+																	cursor: 'pointer',
+																	whiteSpace: 'nowrap'
+																}}
+															>
+																⏭️ Nhường lượt
+															</button>
+														</div>
+													) : (
+														<span
+															style={{
+																color: '#94a3b8',
+																fontSize: '0.8rem',
+																fontStyle: 'italic'
+															}}
+														>
+															Chờ lượt
+														</span>
+													)}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
 						);
 					})()}
 					</div>

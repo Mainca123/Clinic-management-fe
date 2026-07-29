@@ -177,6 +177,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -278,11 +279,15 @@
 .doctor-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 130px;
+  box-sizing: border-box;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 30px;
   font-size: 0.825rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .doctor-badge.pending { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
