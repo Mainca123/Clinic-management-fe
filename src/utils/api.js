@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8088/api/v1', // Backend Docker đang chạy ở port 8088
+    baseURL: 'http://localhost:8080/api/v1', // Backend Docker đang chạy ở port 8088
 	// baseURL: 'https://clinic-management-rfez.onrender.com/api/v1',
     headers: {
         'Content-Type': 'application/json',

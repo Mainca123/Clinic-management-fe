@@ -157,12 +157,6 @@ const PatientAppointments = () => {
       let apptList = Array.isArray(responseAppt.data?.data?.content || responseAppt.data?.data)
         ? (responseAppt.data?.data?.content || responseAppt.data?.data)
         : [];
-
-      apptList.sort((a, b) => {
-        const dateA = new Date(`${a.appointmentDate}T${a.startTime}`);
-        const dateB = new Date(`${b.appointmentDate}T${b.startTime}`);
-        return dateA - dateB;
-      });
       setAppointments(apptList);
 
       const responseDept = await getAllDepartmentsAPI(0);
