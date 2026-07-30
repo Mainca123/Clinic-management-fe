@@ -12,39 +12,6 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import AppointmentSection from './AppointmentSection';
 
-// DỮ LIỆU GIẢ LẬP TEST CHỨC NĂNG DỄ DÀNG KHI BACKEND CHƯA CÓ DỮ LIỆU
-const MOCK_DEPARTMENTS = [
-  { id: 1, name: 'Khoa Tim Mạch', description: 'Chuyên khoa sức khỏe tim mạch & huyết áp' },
-  { id: 2, name: 'Khoa Nội Tổng Quát', description: 'Chẩn đoán và điều trị bệnh lý nội khoa' },
-  { id: 3, name: 'Khoa Nhi', description: 'Chăm sóc & điều trị sức khỏe cho trẻ em' },
-  { id: 4, name: 'Khoa Ngoại Tổng Hợp', description: 'Phẫu thuật và can thiệp ngoại khoa' },
-  { id: 5, name: 'Khoa Mắt', description: 'Khám và điều trị các bệnh lý về nhãn khoa' },
-  { id: 6, name: 'Khoa Tai Mũi Họng', description: 'Chẩn đoán và điều trị Tai Mũi Họng' }
-];
-
-const MOCK_DOCTORS = [
-  { id: 101, fullName: 'BS. CKII. Nguyễn Văn An', departmentId: 1, specialization: 'Tim Mạch học', experienceYears: 15 },
-  { id: 102, fullName: 'ThS. BS. Trần Thị Bình', departmentId: 1, specialization: 'Huyết áp & Mạch máu', experienceYears: 10 },
-  { id: 103, fullName: 'BS. CKI. Lê Văn Cường', departmentId: 2, specialization: 'Nội tổng quát', experienceYears: 12 },
-  { id: 104, fullName: 'ThS. BS. Phạm Thị Dung', departmentId: 2, specialization: 'Tiêu hóa - Gan mật', experienceYears: 8 },
-  { id: 105, fullName: 'BS. CKII. Hoàng Văn Em', departmentId: 3, specialization: 'Nhi khoa tổng quát', experienceYears: 14 },
-  { id: 106, fullName: 'BS. CKI. Vũ Thị Giang', departmentId: 3, specialization: 'Tư vấn dinh dưỡng trẻ em', experienceYears: 7 },
-  { id: 107, fullName: 'TS. BS. Ngô Văn Hùng', departmentId: 4, specialization: 'Ngoại chấn thương', experienceYears: 18 },
-  { id: 108, fullName: 'BS. CKI. Đỗ Thị Hương', departmentId: 5, specialization: 'Nhãn khoa', experienceYears: 9 },
-  { id: 109, fullName: 'ThS. BS. Bùi Văn Khoa', departmentId: 6, specialization: 'Tai Mũi Họng', experienceYears: 11 }
-];
-
-// Ca bận mặc định cho việc test (BS 101, 102, 103...)
-const getMockBookedSlotsForDoctor = (doctorId) => {
-  const docIdNum = Number(doctorId);
-  if (docIdNum === 101) return ['08:00', '09:30', '14:00'];
-  if (docIdNum === 102) return ['08:30', '10:00', '15:00'];
-  if (docIdNum === 103) return ['07:30', '09:00', '13:30'];
-  if (docIdNum === 104) return ['08:00', '10:30', '16:00'];
-  if (docIdNum === 105) return ['07:00', '08:30', '14:30'];
-  return ['08:00', '13:30'];
-};
-
 const PatientAppointments = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -114,22 +81,7 @@ const PatientAppointments = () => {
       )
       .map(a => (a.startTime || '').slice(0, 5));
 
-    const mockTaken = getMockBookedSlotsForDoctor(doctorId);
-
-    let apiTaken = [];
-    try {
-      const response = await getAppointmentsByDoctorAndDateAPI(doctorId, date);
-      const apiAppts = Array.isArray(response.data?.data?.content || response.data?.data)
-        ? (response.data?.data?.content || response.data?.data)
-        : [];
-      apiTaken = apiAppts
-        .filter(a => a.status !== 'CANCELLED')
-        .map(a => (a.startTime || '').slice(0, 5));
-    } catch (error) {
-      // Dùng local/mock nếu API bị lỗi
-    }
-
-    setWBookedSlots(Array.from(new Set([...localTaken, ...mockTaken, ...apiTaken])));
+    setWBookedSlots(Array.from(new Set([...localTaken, ...apiTaken])));
   };
 
   useEffect(() => {
@@ -161,13 +113,13 @@ const PatientAppointments = () => {
 
       const responseDept = await getAllDepartmentsAPI(0);
       const actualDeptArray = responseDept.data?.data?.departmentResponseList || responseDept.data?.departmentResponseList || responseDept.data?.data?.departments || responseDept.data?.data?.content || responseDept.data?.data || [];
-      setDepartments(Array.isArray(actualDeptArray) && actualDeptArray.length > 0 ? actualDeptArray : MOCK_DEPARTMENTS);
+      setDepartments(Array.isArray(actualDeptArray) ? actualDeptArray : []);
 
       const responseDrug = await getAllDrugsAPI(0, 100);
       setDrugs(Array.isArray(responseDrug.data?.data?.content || responseDrug.data?.data) ? (responseDrug.data?.data?.content || responseDrug.data?.data) : []);
     } catch (error) {
-      console.error('Lỗi tải dữ liệu, sử dụng mock departments:', error);
-      setDepartments(MOCK_DEPARTMENTS);
+      console.error('Lỗi tải dữ liệu:', error);
+      setDepartments([]);
     } finally {
       setIsLoadingAppointments(false);
     }
@@ -188,13 +140,11 @@ const PatientAppointments = () => {
         const responseDoc = await getAllDoctorsAPI(0, deptId);
         docs = responseDoc.data?.data?.doctors || responseDoc.data?.data?.doctorList || responseDoc.data?.data?.content || responseDoc.data?.data || responseDoc.data || [];
       } catch (error) {
-        console.error('Lỗi tải danh sách bác sĩ theo khoa, dùng mock doctors:', error);
+        console.error('Lỗi tải danh sách bác sĩ:', error);
       }
 
-      if (!Array.isArray(docs) || docs.length === 0) {
-        docs = deptId
-          ? MOCK_DOCTORS.filter(d => Number(d.departmentId) === Number(deptId))
-          : MOCK_DOCTORS;
+      if (!Array.isArray(docs)) {
+        docs = [];
       }
 
       setDoctorList(docs);

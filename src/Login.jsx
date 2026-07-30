@@ -68,18 +68,6 @@ const Login = () => {
     localStorage.removeItem('token');
   }, []);
 
-  const handleQuickLogin = (role) => {
-    const fakeToken = "mock_jwt_token_" + role + "_" + Date.now();
-    localStorage.setItem('token', fakeToken);
-    if (role === 'ADMIN') {
-      navigate('/admin/dashboard');
-    } else if (role === 'DOCTOR') {
-      navigate('/doctor/dashboard');
-    } else if (role === 'PATIENT') {
-      navigate('/patient/dashboard');
-    }
-  };
-
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit} style={{ position: 'relative' }}>
@@ -165,24 +153,6 @@ const Login = () => {
         <p className="auth-footer">
           Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
         </p>
-
-        {/* 🧪 KHU VỰC ĐĂNG NHẬP GIẢ LẬP ĐỂ TEST GIAO DIỆN FE */}
-        <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px dashed #cbd5e1', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '10px', fontWeight: '600' }}>
-            🧪 Đăng nhập nhanh Giả lập (Không cần Backend):
-          </p>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-            <button type="button" onClick={() => handleQuickLogin('ADMIN')} style={{ padding: '8px 12px', background: '#eff6ff', color: '#0f6eff', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer' }}>
-              🛡️ Admin
-            </button>
-            <button type="button" onClick={() => handleQuickLogin('DOCTOR')} style={{ padding: '8px 12px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer' }}>
-              👨‍⚕️ Bác sĩ
-            </button>
-            <button type="button" onClick={() => handleQuickLogin('PATIENT')} style={{ padding: '8px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer' }}>
-              👤 Bệnh nhân
-            </button>
-          </div>
-        </div>
       </form>
     </div>
   );
