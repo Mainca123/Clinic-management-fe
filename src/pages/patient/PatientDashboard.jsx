@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUserAPI } from '../../services/authService';
 import { searchDoctorsAPI, getAllDoctorsAPI } from '../../services/adminService';
@@ -7,6 +6,7 @@ import { getAllDepartmentsAPI } from '../../services/departmentService';
 import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, getDrugDetailsAPI } from '../../services/drugService';
 import { getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
+import { chatAIAPI } from '../../services/aiService';
 import '../../style/base.css';
 import '../../style/patient.css';
 import Sidebar from './Sidebar';
@@ -266,15 +266,7 @@ const PatientDashboard = () => {
     setIsAiLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/ai/chat',
-        { message: messageText },
-        {
-          headers: {
-            accept: 'application/json',
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await chatAIAPI(messageText);
 
       const data = response.data || {};
       const aiReply = typeof data === 'string'

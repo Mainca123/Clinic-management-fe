@@ -198,6 +198,22 @@ export const handleMockApi = (config) => {
     };
   }
 
+  // 9. AI Chat (/ai/chat)
+  if (url.includes('/ai/chat')) {
+    const data = JSON.parse(config.data || '{}');
+    const msg = data.message || '';
+    return {
+      status: 200,
+      data: {
+        code: 1000,
+        message: `Hệ thống MediPro (Mock AI): Cảm ơn bạn đã nhắn: "${msg}". Tôi khuyên bạn nên giữ gìn sức khỏe và tham khảo ý kiến bác sĩ khi cần.`,
+        data: {
+          reply: `Hệ thống MediPro (Mock AI): Cảm ơn bạn đã nhắn: "${msg}". Tôi khuyên bạn nên giữ gìn sức khỏe và tham khảo ý kiến bác sĩ khi cần.`
+        }
+      }
+    };
+  }
+
   // Fallback default response
   return {
     status: 200,
