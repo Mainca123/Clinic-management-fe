@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCurrentUserAPI } from '../../services/authService';
 import { searchDoctorsAPI, getAllDoctorsAPI } from '../../services/adminService';
 import { getAllDepartmentsAPI } from '../../services/departmentService';
-import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI } from '../../services/appointmentService';
+import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI, getAppointmentsByDoctorAndDateAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, getDrugDetailsAPI } from '../../services/drugService';
 import { getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
 import { chatAIAPI } from '../../services/aiService';
@@ -31,6 +31,52 @@ const PatientDashboard = () => {
   const [departments, setDepartments] = useState([]);
   const [drugs, setDrugs] = useState([]);
   const [doctorList, setDoctorList] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  const ALL_TIME_SLOTS = [
+    '07:00','07:30','08:00','08:30','09:00','09:30',
+    '10:00','10:30','11:00',
+    '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30'
+  ];
+
+  const fetchDoctorSlots = async (doctorId, date) => {
+    if (!doctorId || !date) {
+      setBookedSlots([]);
+      return;
+    }
+    setIsLoadingSlots(true);
+    const localTaken = appointments
+      .filter(a =>
+        (String(a.doctorId) === String(doctorId) || String(a.doctor_id) === String(doctorId)) &&
+        a.appointmentDate === date &&
+        a.status !== 'CANCELLED'
+      )
+      .map(a => (a.startTime || '').slice(0, 5));
+
+    let apiTaken = [];
+    try {
+      const response = await getAppointmentsByDoctorAndDateAPI(doctorId, date);
+      const apptList = Array.isArray(response.data?.data?.content || response.data?.data)
+        ? (response.data?.data?.content || response.data?.data)
+        : Array.isArray(response.data) ? response.data : [];
+
+      apiTaken = apptList
+        .filter(a => a.status !== 'CANCELLED')
+        .map(a => (a.startTime || '').slice(0, 5));
+    } catch (error) {
+      console.error('Lỗi khi lấy ca hẹn của bác sĩ:', error);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+    setBookedSlots(Array.from(new Set([...localTaken, ...apiTaken])));
+  };
+
+  useEffect(() => {
+    if (formData.doctorId && formData.appointmentDate) {
+      fetchDoctorSlots(formData.doctorId, formData.appointmentDate);
+    }
+  }, [formData.doctorId, formData.appointmentDate]);
   const [isDrugModalOpen, setIsDrugModalOpen] = useState(false);
   const [drugDetails, setDrugDetails] = useState(null);
   const [isDrugDetailModalOpen, setIsDrugDetailModalOpen] = useState(false);
@@ -481,8 +527,39 @@ const PatientDashboard = () => {
                 </option>
               ))}
             </select>
-            <input type="date" value={formData.appointmentDate || ''} onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="time" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
+            <input type="date" min={new Date().toISOString().split('T')[0]} value={formData.appointmentDate || ''} onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
+            
+            {formData.doctorId && formData.appointmentDate && (
+              <div style={{ marginTop: '5px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a', display: 'block', marginBottom: '6px' }}>⏰ Các ca khám ngày {formData.appointmentDate}:</label>
+                {isLoadingSlots ? (
+                  <div style={{ fontSize: '12px', color: '#0f6eff', textAlign: 'center', padding: '10px', background: '#eff6ff', borderRadius: '6px' }}>⏳ Đang kiểm tra lịch làm việc...</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                    {ALL_TIME_SLOTS.map(slot => {
+                      const isBooked = bookedSlots.includes(slot);
+                      const isSelected = formData.startTime === slot;
+                      return (
+                        <button key={slot} type="button" disabled={isBooked} onClick={() => setFormData({ ...formData, startTime: slot })}
+                          style={{
+                            padding: '6px 2px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            border: `1px solid ${isSelected ? '#0f6eff' : isBooked ? '#fca5a5' : '#cbd5e1'}`,
+                            background: isSelected ? '#0f6eff' : isBooked ? '#fef2f2' : '#ffffff',
+                            color: isSelected ? '#ffffff' : isBooked ? '#dc2626' : '#334155',
+                            cursor: isBooked ? 'not-allowed' : 'pointer'
+                          }}>
+                          {slot} {isBooked ? '⛔' : isSelected ? '✓' : '🟢'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+            
             <input type="text" placeholder="Triệu chứng/Lý do" value={formData.symptoms || ''} onChange={e => setFormData({ ...formData, symptoms: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>

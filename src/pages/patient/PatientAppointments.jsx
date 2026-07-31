@@ -52,6 +52,7 @@ const PatientAppointments = () => {
   const [wTime, setWTime] = useState('');
   const [wSymptoms, setWSymptoms] = useState('');
   const [wBookedSlots, setWBookedSlots] = useState([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [wDone, setWDone] = useState(false);
 
   // Các khung giờ làm việc 7h-17h (Mỗi ca cách nhau 30 phút, nghỉ trưa từ 11:30 - 13:00)
@@ -67,12 +68,14 @@ const PatientAppointments = () => {
     setWBookedSlots([]); setWDone(false);
   };
 
-  // Lấy slot đã đặt của bác sĩ theo ngày từ danh sách appointments và API
+  // Lấy slot đã đặt của bác sĩ theo ngày từ danh sách appointments và API getAppointmentsByDoctorAndDateAPI
   const computeBookedSlots = async (doctorId, date) => {
     if (!doctorId || !date) {
       setWBookedSlots([]);
       return;
     }
+    setIsLoadingSlots(true);
+    // 1. Lọc local taken slots từ appointments đã có
     const localTaken = appointments
       .filter(a =>
         (String(a.doctorId) === String(doctorId) || String(a.doctor_id) === String(doctorId)) &&
@@ -80,6 +83,23 @@ const PatientAppointments = () => {
         a.status !== 'CANCELLED'
       )
       .map(a => (a.startTime || '').slice(0, 5));
+
+    let apiTaken = [];
+    try {
+      // 2. Gọi API kiểm tra lịch thực tế của bác sĩ theo ngày đã chọn
+      const response = await getAppointmentsByDoctorAndDateAPI(doctorId, date);
+      const apptList = Array.isArray(response.data?.data?.content || response.data?.data)
+        ? (response.data?.data?.content || response.data?.data)
+        : Array.isArray(response.data) ? response.data : [];
+
+      apiTaken = apptList
+        .filter(a => a.status !== 'CANCELLED')
+        .map(a => (a.startTime || '').slice(0, 5));
+    } catch (error) {
+      console.error('Lỗi khi lấy ca khám của bác sĩ từ API:', error);
+    } finally {
+      setIsLoadingSlots(false);
+    }
 
     setWBookedSlots(Array.from(new Set([...localTaken, ...apiTaken])));
   };
@@ -509,6 +529,10 @@ const PatientAppointments = () => {
                     {!wDate ? (
                       <div style={{ padding:'20px', textAlign:'center', color:'#64748b', background:'#f8fafc', borderRadius:'12px', border:'1px dashed #cbd5e1', fontSize:'13px' }}>
                         👉 Vui lòng chọn <strong>ngày khám</strong> để xem các ca khám 30 phút của Bác sĩ.
+                      </div>
+                    ) : isLoadingSlots ? (
+                      <div style={{ padding:'24px', textAlign:'center', color:'#0f6eff', background:'#eff6ff', borderRadius:'12px', border:'1px solid #bfdbfe', fontSize:'14px', fontWeight:'600' }}>
+                        ⏳ Đang kiểm tra lịch làm việc & ca bận của BS. {wDoctor?.fullName}...
                       </div>
                     ) : (
                       <div style={{ marginBottom:'20px' }}>
