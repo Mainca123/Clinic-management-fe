@@ -63,7 +63,11 @@ const PatientDashboard = () => {
 
       apiTaken = apptList
         .filter(a => a.status !== 'CANCELLED')
-        .map(a => (a.startTime || '').slice(0, 5));
+        .map(a => {
+          const rawTime = a.startTime || a.appointmentTime || a.time || a.start_time || a.shiftTime || a.slot || '';
+          return String(rawTime).slice(0, 5);
+        })
+        .filter(t => Boolean(t));
     } catch (error) {
       console.error('Lỗi khi lấy ca hẹn của bác sĩ:', error);
     } finally {

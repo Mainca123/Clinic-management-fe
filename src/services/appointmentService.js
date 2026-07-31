@@ -38,9 +38,13 @@ export const completeAppointmentAPI = async (id) => {
 };
 
 
-// Lấy lịch hẹn theo bác sĩ và ngày để kiểm tra slot đã đặt
+// Lấy lịch hẹn/thông tin ca của bác sĩ theo ngày (GET /api/v1/appointments/doctors/{doctorId}?date={date})
 export const getAppointmentsByDoctorAndDateAPI = async (doctorId, date) => {
-    return await api.get(`/appointments?page=0&size=100&doctorId=${doctorId}&date=${date}`);
+    let url = `/appointments/doctors/${doctorId}`;
+    if (date) {
+        url += `?date=${date}`;
+    }
+    return await api.get(url);
 };
 
 // xóa/hủy trạng thái lịch hẹn
