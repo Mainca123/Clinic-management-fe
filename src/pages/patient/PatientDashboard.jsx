@@ -12,6 +12,14 @@ import '../../style/patient.css';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AppointmentSection from './AppointmentSection';
+import AiResponseContent from '../../components/ai/AiResponseContent';
+
+const AI_GREETING = 'Xin chào! Tôi là trợ lý AI của MediPro. Bạn có thể hỏi về triệu chứng, lịch hẹn hoặc cách theo dõi sức khỏe của mình.';
+
+const createClientId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -94,10 +102,11 @@ const PatientDashboard = () => {
   const [historyRecords, setHistoryRecords] = useState([]);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, type: 'bot', text: 'Xin chào! Tôi là trợ lý AI của MediPro. Bạn có thể hỏi về triệu chứng, lịch hẹn hoặc cách theo dõi sức khỏe của mình.' }
+    { id: 'ai-greeting', type: 'bot', text: AI_GREETING, success: true }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
   const chatBoxRef = useRef(null);
   const chatInputRef = useRef(null);
 
@@ -305,33 +314,73 @@ const PatientDashboard = () => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    const messageText = chatInput.trim();
+  const sendAIMessage = async (rawMessage) => {
+    const messageText = rawMessage.trim();
     if (!messageText || isAiLoading) return;
 
-    const userMessage = { id: Date.now(), type: 'user', text: messageText };
+    const userMessage = { id: createClientId(), type: 'user', text: messageText };
     setChatMessages(prev => [...prev, userMessage]);
     setChatInput('');
     setIsAiLoading(true);
 
     try {
-      const response = await chatAIAPI(messageText);
+      const data = await chatAIAPI({ message: messageText, conversationId });
+      const nextConversationId = data.metadata?.conversationId;
 
-      const data = response.data || {};
-      const aiReply = typeof data === 'string'
-        ? data
-        : data?.message || data?.reply || data?.content || data?.data?.message || data?.data?.reply || 'AI chưa trả lời được. Vui lòng thử lại.';
+      if (nextConversationId) setConversationId(nextConversationId);
 
-      const payload = data.payload || data.data?.payload || null;
-      const tool = data.tool || data.data?.tool || null;
+      setChatMessages(prev => [...prev, {
+        id: createClientId(),
+        type: 'bot',
+        text: data.message,
+        payload: data.payload,
+        tool: data.tool,
+        success: data.success,
+        metadata: data.metadata
+      }]);
 
-      setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: aiReply, payload, tool }]);
+      if (['BOOKED', 'CANCELLED', 'RESCHEDULED'].includes(data.payload?.action)) {
+        fetchAppointmentsAndDepartments();
+      }
     } catch (error) {
-      setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: 'Xin lỗi, hiện tại AI chưa thể phản hồi. Vui lòng thử lại sau.' }]);
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || 'Xin lỗi, hiện tại AI chưa thể phản hồi. Vui lòng thử lại sau.';
+      setChatMessages(prev => [...prev, {
+        id: createClientId(),
+        type: 'bot',
+        text: errorMessage,
+        success: false
+      }]);
     } finally {
       setIsAiLoading(false);
     }
+  };
+
+  const handleSendMessage = (event) => {
+    event.preventDefault();
+    sendAIMessage(chatInput);
+  };
+
+  const handleNewConversation = () => {
+    if (isAiLoading) return;
+    setConversationId(createClientId());
+    setChatMessages([{ id: createClientId(), type: 'bot', text: AI_GREETING, success: true }]);
+    setChatInput('');
+    chatInputRef.current?.focus();
+  };
+
+  const handleAISelectDoctor = (doctor, suggestion) => {
+    setDoctorList(prev => prev.some(item => String(item.id || item.userId) === String(doctor.id))
+      ? prev
+      : [doctor, ...prev]);
+    setFormData(prev => ({
+      ...prev,
+      doctorId: String(doctor.id),
+      departmentId: suggestion.departmentId ? String(suggestion.departmentId) : (prev.departmentId || ''),
+      symptoms: prev.symptoms || suggestion.advice || ''
+    }));
+    setIsModalOpen(true);
   };
 
   const trendData = [
@@ -356,44 +405,28 @@ const PatientDashboard = () => {
               <div className="ai-chat-header">
                 <div>
                   <h3 style={{ margin: 0, color: '#0f172a' }}>💬 Trợ lý AI Hỗ trợ Bệnh nhân</h3>
-                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#475569' }}>Nổi bật, dễ nhận diện và luôn sẵn sàng giải đáp nhanh.</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#475569' }}>
+                    {conversationId ? `Phiên ${conversationId.slice(0, 8)}…` : 'Phiên sẽ được tạo sau tin nhắn đầu tiên'}
+                  </p>
                 </div>
-                <span className="ai-chat-badge">Tư vấn nhanh</span>
+                <button type="button" className="ai-new-chat" onClick={handleNewConversation} disabled={isAiLoading}>
+                  + Cuộc trò chuyện mới
+                </button>
               </div>
 
               <div ref={chatBoxRef} className="ai-chat-messages">
                 {chatMessages.map(msg => (
                   <div key={msg.id} className={`ai-chat-message ${msg.type}`}>
-                    {msg.type === 'bot' && msg.payload && msg.tool === 'DOCTOR_TOOL' ? (
-                      <div className="doctor-recommendation">
-                        <div className="doctor-reco-header">
-                          <div>
-                            <div style={{ fontSize: '14px', color: '#2563eb', fontWeight: 800 }}>{msg.payload.department || 'Khoa đề xuất'}</div>
-                            <div className="doctor-reco-advice" style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>{msg.text}</div>
-                          </div>
-                        </div>
-
-                        <div className="doctor-list">
-                          {Array.isArray(msg.payload.doctors) && msg.payload.doctors.length > 0 ? msg.payload.doctors.map(d => (
-                            <div key={d.id} className="doctor-card">
-                              <div className="doctor-card-left">
-                                <div className="doctor-name">{d.fullName}</div>
-                                <div className="doctor-meta">{d.specialization} · {d.experienceYears} năm kinh nghiệm</div>
-                                <div className="doctor-dept">{d.departmentName}</div>
-                              </div>
-                              <div className="doctor-card-right">
-                                <a href={`mailto:${d.email}`} className="doctor-contact">Liên hệ</a>
-                              </div>
-                            </div>
-                          )) : (
-                            <div className="ai-chat-bubble">{msg.text}</div>
-                          )}
-                        </div>
-                      </div>
+                    {msg.type === 'bot' ? (
+                      <AiResponseContent
+                        message={msg}
+                        onCommand={sendAIMessage}
+                        onSelectDoctor={handleAISelectDoctor}
+                        onViewAppointment={handleViewAppointmentDetails}
+                        onViewMedicalRecord={handleViewMedicalRecord}
+                      />
                     ) : (
-                      <div className="ai-chat-bubble">
-                        {msg.text}
-                      </div>
+                      <div className="ai-chat-bubble">{msg.text}</div>
                     )}
                   </div>
                 ))}

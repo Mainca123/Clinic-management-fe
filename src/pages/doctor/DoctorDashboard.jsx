@@ -104,7 +104,6 @@ const DoctorDashboard = () => {
       alert("Vui lòng nhập chẩn đoán bệnh!");
       return;
     }
-
     try {
       // Gửi dữ liệu tạo bệnh án
       const medicalRecordPayload = {
