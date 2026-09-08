@@ -63,7 +63,27 @@ const ChangePassword = () => {
 
   return (
     <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handleSubmit} style={{ position: 'relative' }}>
+        <button 
+          type="button" 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            position: 'absolute', 
+            top: '15px', 
+            right: '15px', 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#ef4444', 
+            fontSize: '22px', 
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            lineHeight: 1,
+            padding: '4px 8px'
+          }}
+          title="Đóng / Quay lại"
+        >
+          ✕
+        </button>
         <h2>Bảo Mật Tài Khoản</h2>
         <p style={{ textAlign: 'center', color: '#dc2626', marginBottom: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
           * Vui lòng đổi mật khẩu mới ngay lập tức để bảo vệ tài khoản của bạn.

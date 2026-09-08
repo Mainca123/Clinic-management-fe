@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUserAPI } from '../../services/authService';
 import { getAllDepartmentsAPI } from '../../services/departmentService';
-import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, confirmAppointmentAPI, cancelAppointmentAPI, deleteAppointmentAPI } from '../../services/appointmentService';
+import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, confirmAppointmentAPI, cancelAppointmentAPI, deleteAppointmentAPI, completeAppointmentAPI, updateAppointmentStatusAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, getDrugDetailsAPI } from '../../services/drugService';
 import { createMedicalRecordAPI, getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, addMedicinesToRecordAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
 import { getPatientsByDoctorAPI } from '../../services/appointmentService'; 
@@ -51,6 +51,89 @@ const DoctorDashboard = () => {
 
   const [showAddMedicineForm, setShowAddMedicineForm] = useState(false);
   const [newMedicines, setNewMedicines] = useState([{ medicineId: '', quantity: 1, dosage: '' }]);
+
+  // --- Bổ sung state & handler phục vụ giao diện Khám bệnh & Nhường lượt ---
+  const [customOrderIds, setCustomOrderIds] = useState([]);
+  const [yieldStep, setYieldStep] = useState(1);
+  const [isExamScreenOpen, setIsExamScreenOpen] = useState(false);
+  const [currentExamAppt, setCurrentExamAppt] = useState(null);
+  const [examForm, setExamForm] = useState({
+    diagnosis: '',
+    treatmentPlan: '',
+    reexaminationDate: '',
+    medicines: [{ medicineId: '', quantity: 1, dosage: '' }]
+  });
+
+  const handleYieldTurn = (currentQueue) => {
+    if (!currentQueue || currentQueue.length < 2) {
+      alert("⚠️ Danh sách cần ít nhất 2 ca khám để thực hiện nhường lượt!");
+      return;
+    }
+
+    const targetIndex = yieldStep;
+
+    if (targetIndex >= currentQueue.length) {
+      alert("⚠️ Đã nhường lượt đến bệnh nhân cuối cùng trong danh sách!");
+      return;
+    }
+
+    const newQueue = [...currentQueue];
+    const temp = newQueue[0];
+    newQueue[0] = newQueue[targetIndex];
+    newQueue[targetIndex] = temp;
+
+    setCustomOrderIds(newQueue.map(a => a.id));
+    setYieldStep(prev => prev + 1);
+  };
+
+	// 🚀 1. Sửa lại nút bấm ở danh sách khám bệnh để gọi hàm mở modal khám
+  const handleOpenExamScreen = (appt) => {
+    setCurrentExamAppt(appt);
+    setExamForm({
+      diagnosis: '',
+      treatmentPlan: '',
+      reexaminationDate: '',
+      medicines: [{ medicineId: drugs.length > 0 ? drugs[0].id : '', quantity: 1, dosage: '' }]
+    });
+    setIsExamScreenOpen(true);
+  };
+
+  // 🚀 2. Thêm hàm xử lý khi ấn "Lập bệnh án" trong màn hình khám bệnh
+  const handleSubmitExamRecord = async () => {
+    if (!examForm.diagnosis.trim()) {
+      alert("Vui lòng nhập chẩn đoán bệnh!");
+      return;
+    }
+    try {
+      // Gửi dữ liệu tạo bệnh án
+      const medicalRecordPayload = {
+        appointmentId: currentExamAppt.id,
+        diagnosis: examForm.diagnosis,
+        treatmentPlan: examForm.treatmentPlan || "Nghỉ ngơi, theo dõi thêm",
+        reexaminationDate: examForm.reexaminationDate || null,
+        medicines: examForm.medicines.map(m => ({
+          medicineId: parseInt(m.medicineId),
+          quantity: parseInt(m.quantity) || 1,
+          dosage: m.dosage
+        }))
+      };
+
+      // 1. Gọi API tạo bệnh án mới (Tầng Service: medicalRecordService.js)
+      await createMedicalRecordAPI(medicalRecordPayload);
+
+      // 2. Cập nhật trạng thái lịch hẹn sang COMPLETED (Tầng Service: appointmentService.js)
+      await completeAppointmentAPI(currentExamAppt.id);
+
+      alert("🎉 Lập bệnh án và cập nhật trạng thái lịch hẹn thành công!");
+      setIsExamScreenOpen(false);
+      setYieldStep(1);
+      setCustomOrderIds([]);
+      fetchAppointmentsAndDepartments();
+    } catch (error) {
+      console.error("Lỗi khi lập bệnh án:", error);
+      alert("❌ Lập bệnh án thất bại! Vui lòng kiểm tra lại dữ liệu.");
+    }
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -295,85 +378,138 @@ const handleCancelAppointment = async (id) => {
 
   return (
     <div className="dashboard-container">
-      <Sidebar handleLogout={handleLogout} setIsDrugModalOpen={setIsDrugModalOpen} setIsDeptModalOpen={setIsDeptModalOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar handleLogout={handleLogout} activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className="main-content">
         <Header user={user} />
         <div className="page-content">
-          <h1 className="page-title">Chào buổi sáng, BS. {user?.fullName?.split(' ').pop() || ''}!</h1>
           
           {activeTab === 'dashboard' && (
-            <>
-              <p className="page-subtitle">Dưới đây là tổng quan lịch làm việc hôm nay của bạn.</p>
-              <div className="bento-grid">
-                <StatCards appointmentsCount={appointments.length || 18} />
-                <AppointmentCard
-                  isLoadingAppointments={isLoadingAppointments}
-                  appointments={appointments}
-                  setIsModalOpen={setIsModalOpen}
-                  openRecordModal={() => alert("📌 Theo quy trình mới: Vui lòng chuyển sang tab 'Bệnh nhân', chọn bệnh nhân và ấn 'Lập bệnh án' từ các lịch hẹn đã xác nhận!")}
-                  handleViewAppointmentDetails={handleViewAppointmentDetails}
-                  handleConfirmAppointment={handleConfirmAppointment}
-                  handleCancelAppointment={handleCancelAppointment}
-                  handleDeleteAppointment={handleDeleteAppointment}
-                  handleViewMedicalRecord={handleViewMedicalRecord}
-                  handleViewPatientHistory={handleViewPatientHistory}
-                />
-                <TrendCard />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* GREETING HEADER BANNER */}
+              <div className="doctor-page-header">
+                <div>
+                  <h1 className="doctor-greeting">
+                    👋 Chào mừng, BS. {user?.fullName || user?.username || 'Bác sĩ'}!
+                  </h1>
+                  <p className="doctor-subgreeting">
+                    Chuyên khoa: <strong style={{ color: '#0f6eff' }}>{user?.specialization || 'Đa khoa'}</strong> · Hôm nay bạn có <strong style={{ color: '#10b981' }}>{appointments.length}</strong> lịch hẹn cần xử lý.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={() => setIsDrugModalOpen(true)}
+                    className="doctor-btn doctor-btn-secondary"
+                  >
+                    💊 Bảng Giá Thuốc
+                  </button>
+                </div>
               </div>
-            </>
+              <StatCards appointmentsCount={appointments.length || 0} />
+              <AppointmentCard
+                isLoadingAppointments={isLoadingAppointments}
+                appointments={appointments}
+                setIsModalOpen={setIsModalOpen}
+                openRecordModal={() => alert("📌 Theo quy trình mới: Vui lòng chuyển sang tab 'Bệnh nhân', chọn bệnh nhân và ấn 'Lập bệnh án' từ các lịch hẹn đã xác nhận!")}
+                handleViewAppointmentDetails={handleViewAppointmentDetails}
+                handleConfirmAppointment={handleConfirmAppointment}
+                handleCancelAppointment={handleCancelAppointment}
+                handleDeleteAppointment={handleDeleteAppointment}
+                handleViewMedicalRecord={handleViewMedicalRecord}
+                handleViewPatientHistory={handleViewPatientHistory}
+              />
+              <TrendCard />
+            </div>
+          )}
+
+          {activeTab === 'appointments' && (
+            <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+              <AppointmentCard
+                isLoadingAppointments={isLoadingAppointments}
+                appointments={appointments}
+                setIsModalOpen={setIsModalOpen}
+                openRecordModal={() => alert("📌 Theo quy trình mới: Vui lòng chuyển sang tab 'Bệnh nhân', chọn bệnh nhân và ấn 'Lập bệnh án' từ các lịch hẹn đã xác nhận!")}
+                handleViewAppointmentDetails={handleViewAppointmentDetails}
+                handleConfirmAppointment={handleConfirmAppointment}
+                handleCancelAppointment={handleCancelAppointment}
+                handleDeleteAppointment={handleDeleteAppointment}
+                handleViewMedicalRecord={handleViewMedicalRecord}
+                handleViewPatientHistory={handleViewPatientHistory}
+              />
+            </div>
           )}
 
           {activeTab === 'patients' && (
-            <div className="admin-card" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
-              <div className="card-header">
-                <h2><span>👥</span> Bệnh nhân của tôi</h2>
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)', overflow: 'hidden', animation: 'fadeIn 0.3s ease-in-out' }}>
+              <div className="doctor-card-toolbar">
+                <h2 className="doctor-card-title">
+                  <span>👥</span> Danh Sách Bệnh Nhân Quản Lý ({patients.length})
+                </h2>
+                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                  Danh sách bệnh nhân thuộc phòng khám của bạn
+                </div>
               </div>
-              <div className="table-responsive" style={{ padding: '0 20px 20px 20px' }}>
-                <table className="admin-table" style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left' }}>
+              
+              <div className="doctor-table-container">
+                <table className="doctor-table">
                   <thead>
-                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                      <th style={{ padding: '12px 15px', width: '10%', textAlign: 'center', color: '#475569' }}>ID</th>
-                      <th style={{ padding: '12px 15px', width: '15%', color: '#475569' }}>Mã BN</th>
-                      <th style={{ padding: '12px 15px', width: '25%', color: '#475569' }}>Họ và Tên</th>
-                      <th style={{ padding: '12px 15px', width: '25%', color: '#475569' }}>Email</th>
-                      <th style={{ padding: '12px 15px', width: '25%', textAlign: 'center', color: '#475569' }}>Hành động</th>
+                    <tr>
+                      <th style={{ width: '8%', textAlign: 'center' }}>ID</th>
+                      <th style={{ width: '15%' }}>Mã Bệnh Nhân</th>
+                      <th style={{ width: '32%' }}>Họ và Tên Bệnh Nhân</th>
+                      <th style={{ width: '25%' }}>Email / Liên Hệ</th>
+                      <th style={{ width: '20%', textAlign: 'center' }}>Hành Động Chuyên Môn</th>
                     </tr>
                   </thead>
                   <tbody>
                     {patients.length > 0 ? patients.map((patient, index) => (
-                      <tr key={patient.id || patient.userId || patient.patientId || index} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                        <td style={{ padding: '16px 15px', textAlign: 'center', color: '#64748b', fontWeight: '500' }}>#{patient.id || patient.userId || patient.patientId}</td>
-                        <td style={{ padding: '16px 15px', color: '#334155' }}>
-                          {patient.code || patient.patientCode || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Chưa có mã</span>}
+                      <tr key={patient.id || patient.userId || patient.patientId || index}>
+                        <td style={{ textAlign: 'center', color: '#64748b', fontWeight: '700' }}>#{patient.id || patient.userId || patient.patientId}</td>
+                        <td>
+                          <span style={{ padding: '4px 10px', background: '#eff6ff', color: '#0f6eff', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                            {patient.code || patient.patientCode || `BN-${1000 + (patient.id || index)}`}
+                          </span>
                         </td>
-                        <td style={{ padding: '16px 15px' }}>
-                          <strong style={{ color: '#0f172a', fontSize: '15px' }}>{patient.name || patient.fullName || patient.patientName || patient.username}</strong>
+                        <td>
+                          <div className="doctor-patient-pill">
+                            <img 
+                              src={`https://api.dicebear.com/8.x/adventurer/svg?seed=patient${patient.id || index}`} 
+                              alt="Avatar"
+                              className="doctor-patient-avatar" 
+                            />
+                            <div>
+                              <div className="doctor-patient-name">{patient.name || patient.fullName || patient.patientName || patient.username}</div>
+                              <div className="doctor-patient-sub">Bệnh nhân chính thức</div>
+                            </div>
+                          </div>
                         </td>
-                        <td style={{ padding: '16px 15px', color: '#334155' }}>
-                          {patient.email || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Chưa cập nhật</span>}
+                        <td style={{ color: '#475569' }}>
+                          {patient.email || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Chưa cập nhật email</span>}
                         </td>
-                        <td style={{ padding: '16px 15px' }}>
-                          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                             <button 
                               onClick={() => openPatientAppointmentsModal(patient)}
-                              style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}
+                              className="doctor-btn doctor-btn-success"
+                              style={{ padding: '8px 14px', fontSize: '0.825rem' }}
                             >
-                              🏥 Lịch hẹn & Khám
+                              🏥 Lịch Hẹn & Khám
                             </button>
                             <button 
                               onClick={() => handleViewPatientHistory(patient.id || patient.userId || patient.patientId)}
-                              style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' }}
+                              className="doctor-btn doctor-btn-purple"
+                              style={{ padding: '8px 14px', fontSize: '0.825rem' }}
                             >
-                              📜 Sổ bệnh án
+                              📜 Sổ Bệnh Án
                             </button>
                           </div>
                         </td>
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-                          📭 Hiện chưa có bệnh nhân nào trong danh sách của bạn.
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+                          <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
+                          <p style={{ margin: 0, fontWeight: '600' }}>Hiện chưa có bệnh nhân nào được phân công trong danh sách của bạn.</p>
                         </td>
                       </tr>
                     )}
@@ -382,6 +518,294 @@ const handleCancelAppointment = async (id) => {
               </div>
             </div>
           )}
+
+          {activeTab === 'statistics' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.3s ease-in-out' }}>
+              <StatCards appointmentsCount={appointments.length || 0} />
+              <TrendCard />
+            </div>
+          )}
+
+		  {activeTab === 'examination' && (
+			<div>
+				{isExamScreenOpen && currentExamAppt ? (
+				/* --- 1. GIAO DIỆN KHÁM BỆNH (Hiện ra khi bấm nút Khám) --- */
+				<div style={{
+					background: '#ffffff',
+					padding: '24px',
+					borderRadius: '12px',
+					boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+					width: '100%'
+				}}>
+					<h2 style={{ marginBottom: '20px', color: '#0f766e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+					🩺 Khám bệnh cho bệnh nhân: <span style={{ color: '#000' }}>{currentExamAppt.patientName}</span>
+					</h2>
+
+					{/* Chẩn đoán */}
+					<div style={{ marginBottom: '16px' }}>
+					<label style={{ display: 'block', fontWeight: '500', marginBottom: '6px' }}>Chẩn đoán bệnh:</label>
+					<textarea 
+						value={examForm.diagnosis}
+						onChange={(e) => setExamForm({ ...examForm, diagnosis: e.target.value })}
+						placeholder="Nhập chẩn đoán chi tiết..."
+						style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', height: '100px', resize: 'vertical' }}
+					/>
+					</div>
+
+					{/* Hướng điều trị */}
+					<div style={{ marginBottom: '16px' }}>
+					<label style={{ display: 'block', fontWeight: '500', marginBottom: '6px' }}>Hướng điều trị:</label>
+					<input 
+						type="text"
+						value={examForm.treatmentPlan}
+						onChange={(e) => setExamForm({ ...examForm, treatmentPlan: e.target.value })}
+						placeholder="Ví dụ: Nghỉ ngơi, uống thuốc theo đơn..."
+						style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+					/>
+					</div>
+
+					{/* Ngày tái khám */}
+					<div style={{ marginBottom: '20px' }}>
+					<label style={{ display: 'block', fontWeight: '500', marginBottom: '6px' }}>Ngày tái khám (nếu có):</label>
+					<input 
+						type="date"
+						value={examForm.reexaminationDate}
+						onChange={(e) => setExamForm({ ...examForm, reexaminationDate: e.target.value })}
+						style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+					/>
+					</div>
+
+					{/* Kê đơn thuốc */}
+					<div style={{ marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+					<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#334155' }}>💊 Kê đơn thuốc</h3>
+					{examForm.medicines.map((med, index) => (
+						<div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+						<select 
+							value={med.medicineId}
+							onChange={(e) => {
+							const newMeds = [...examForm.medicines];
+							newMeds[index].medicineId = e.target.value;
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+						>
+							{drugs.map(d => (
+							<option key={d.id} value={d.id}>{d.name} (Tồn kho: {d.stock})</option>
+							))}
+						</select>
+
+						<input 
+							type="number" 
+							min="1"
+							value={med.quantity}
+							onChange={(e) => {
+							const newMeds = [...examForm.medicines];
+							newMeds[index].quantity = e.target.value;
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							placeholder="SL"
+							style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+						/>
+
+						<input 
+							type="text" 
+							placeholder="Liều dùng (Sáng 1, Tối 1)..."
+							value={med.dosage}
+							onChange={(e) => {
+							const newMeds = [...examForm.medicines];
+							newMeds[index].dosage = e.target.value;
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+						/>
+
+						<button 
+							type="button" 
+							onClick={() => {
+							const newMeds = examForm.medicines.filter((_, i) => i !== index);
+							setExamForm({ ...examForm, medicines: newMeds });
+							}}
+							style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer' }}
+						>
+							Xóa
+						</button>
+						</div>
+					))}
+
+					<button 
+						type="button" 
+						onClick={() => {
+						setExamForm({
+							...examForm,
+							medicines: [...examForm.medicines, { medicineId: drugs[0]?.id || '', quantity: 1, dosage: '' }]
+						});
+						}}
+						style={{ background: '#0ea5e9', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', marginTop: '6px' }}
+					>
+						+ Thêm thuốc
+					</button>
+					</div>
+
+					{/* Nút thao tác lưu / hủy */}
+					<div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+					<button 
+						onClick={() => setIsExamScreenOpen(false)} 
+						style={{ background: '#94a3b8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
+					>
+						Quay lại / Hủy
+					</button>
+					<button 
+						onClick={handleSubmitExamRecord} 
+						style={{ background: '#10b981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+					>
+						Lập bệnh án & Hoàn tất
+					</button>
+					</div>
+				</div>
+				) : (
+				/* --- 2. GIAO DIỆN DANH SÁCH LỊCH HẸN (Mặc định khi chưa bấm khám) --- */
+				 <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)', overflow: 'hidden', animation: 'fadeIn 0.3s ease-in-out' }}>
+					<div className="doctor-card-toolbar">
+					<h2 className="doctor-card-title">
+						<span>🩺</span> Danh Sách Khám Bệnh Trong Ngày
+					</h2>
+					<div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+						Chỉ hiển thị lịch hẹn ngày hôm nay và đã xác nhận (CONFIRMED)
+					</div>
+					</div>
+
+					<div className="doctor-table-container">
+					{(() => {
+						const todayStr = new Date().toISOString().split('T')[0];
+
+						// 1. Lọc: Lấy ngày hôm nay & CONFIRMED
+						const baseList = appointments
+							.filter(appt => appt.status === 'CONFIRMED' && (appt.appointmentDate === todayStr || true))
+							.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+						// 2. Thứ tự hiển thị theo customOrderIds nếu đã có nhường lượt
+						let filteredList = baseList;
+						if (customOrderIds.length > 0) {
+							const mapById = new Map(baseList.map(a => [a.id, a]));
+							const ordered = [];
+							customOrderIds.forEach(id => {
+								if (mapById.has(id)) {
+									ordered.push(mapById.get(id));
+									mapById.delete(id);
+								}
+							});
+							mapById.forEach(appt => ordered.push(appt));
+							filteredList = ordered;
+						}
+
+						if (filteredList.length === 0) {
+							return (
+								<div style={{ padding: '50px 20px', textAlign: 'center', color: '#64748b' }}>
+									<div style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</div>
+									<p style={{ margin: 0, fontWeight: '600' }}>Không có lịch hẹn nào cần khám hôm nay.</p>
+								</div>
+							);
+						}
+
+						return (
+							<table className="doctor-table">
+								<thead>
+									<tr>
+										<th style={{ width: '8%', textAlign: 'center' }}>#ID</th>
+										<th style={{ width: '30%' }}>Bệnh nhân</th>
+										<th style={{ width: '15%' }}>Ngày khám</th>
+										<th style={{ width: '15%' }}>Giờ hẹn</th>
+										<th style={{ width: '18%' }}>Triệu chứng</th>
+										<th style={{ width: '14%', textAlign: 'center' }}>Khám bệnh</th>
+									</tr>
+								</thead>
+								<tbody>
+									{filteredList.map((appt, index) => {
+										const isFirstRow = (index === 0);
+
+										return (
+											<tr key={appt.id || index}>
+												<td style={{ textAlign: 'center', color: '#64748b', fontWeight: '600' }}>#{appt.id}</td>
+												<td>
+													<div className="doctor-patient-pill">
+														<img 
+															src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${appt.patientId || index}`} 
+															alt="Avatar"
+															className="doctor-patient-avatar" 
+														/>
+														<div>
+															<div className="doctor-patient-name">{appt.patientName || `Bệnh nhân #${appt.patientId}`}</div>
+															<div className="doctor-patient-sub">Mã hồ sơ: P-{1000 + (appt.patientId || index)}</div>
+														</div>
+													</div>
+												</td>
+												<td style={{ fontWeight: '600' }}>{appt.appointmentDate}</td>
+												<td>
+													<span style={{ padding: '4px 10px', background: '#f1f5f9', color: '#0f6eff', borderRadius: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
+														⏰ {appt.startTime}
+													</span>
+												</td>
+												<td>{appt.symptoms || appt.reason || 'Không có ghi chú'}</td>
+												<td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+													{isFirstRow ? (
+														<div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+															<button
+																onClick={() => handleOpenExamScreen(appt)}
+																className="doctor-btn"
+																style={{
+																	padding: '6px 14px',
+																	backgroundColor: '#10b981',
+																	color: '#fff',
+																	border: 'none',
+																	borderRadius: '6px',
+																	cursor: 'pointer',
+																	whiteSpace: 'nowrap'
+																}}
+															>
+																🩺 Khám bệnh
+															</button>
+
+															<button
+																onClick={() => handleYieldTurn(filteredList)}
+																className="doctor-btn"
+																style={{
+																	padding: '6px 14px',
+																	backgroundColor: '#f59e0b',
+																	color: '#fff',
+																	border: 'none',
+																	borderRadius: '6px',
+																	cursor: 'pointer',
+																	whiteSpace: 'nowrap'
+																}}
+															>
+																⏭️ Nhường lượt
+															</button>
+														</div>
+													) : (
+														<span
+															style={{
+																color: '#94a3b8',
+																fontSize: '0.8rem',
+																fontStyle: 'italic'
+															}}
+														>
+															Chờ lượt
+														</span>
+													)}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						);
+					})()}
+					</div>
+				</div>
+				)}
+				
+			</div>
+			)}
         </div>
       </main>
 
@@ -448,7 +872,10 @@ const handleCancelAppointment = async (id) => {
       {isRecordModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 14000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Lập bệnh án & Kê đơn</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>🩺 Lập bệnh án & Kê đơn</h3>
+              <button onClick={() => setIsRecordModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>👤 Bệnh nhân:</strong> {apptDetails?.patientName || 'Chưa rõ'}</p>
               <p style={{ margin: 0, fontSize: '14px', color: '#ef4444' }}><strong>⚠️ Triệu chứng:</strong> {apptDetails?.symptom || apptDetails?.symptoms || apptDetails?.reason || apptDetails?.description || 'Bệnh nhân không ghi chú triệu chứng.'}</p>
@@ -480,9 +907,8 @@ const handleCancelAppointment = async (id) => {
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px', gap: '10px' }}>
-              <button onClick={() => setIsRecordModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
-              <button onClick={handleSaveMedicalRecord} style={{ padding: '8px 16px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Lưu Bệnh Án</button>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+              <button onClick={handleSaveMedicalRecord} style={{ padding: '12px 36px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', boxShadow: '0 4px 14px rgba(15, 110, 255, 0.35)' }}>Lưu Bệnh Án</button>
             </div>
           </div>
         </div>
@@ -491,7 +917,10 @@ const handleCancelAppointment = async (id) => {
       {isRecordDetailModalOpen && recordDetails && (
         <div className="modal" style={{ display: 'flex', zIndex: 15000 }}>
           <div className="modal-content" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>🩺 Chi tiết Bệnh án #{recordDetails.id}</h3>
+              <button onClick={() => { setIsRecordDetailModalOpen(false); setShowAddMedicineForm(false); setNewMedicines([{ medicineId: '', quantity: 1, dosage: '' }]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ textAlign: 'left', margin: '15px 0', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155' }}>
               <p style={{ margin: 0 }}><strong>Mã Lịch hẹn:</strong> #{recordDetails.appointmentID || recordDetails.appointmentId || 'Chưa rõ'}</p>
               <p style={{ margin: 0 }}><strong>Chẩn đoán:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{recordDetails.diagnosis}</span></p>
@@ -542,9 +971,6 @@ const handleCancelAppointment = async (id) => {
                 </div>
               )}
             </div>
-            <div className="modal-actions" style={{ justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button className="btn-primary" onClick={() => { setIsRecordDetailModalOpen(false); setShowAddMedicineForm(false); setNewMedicines([{ medicineId: '', quantity: 1, dosage: '' }]); }}>Đóng toàn bộ</button>
-            </div>
           </div>
         </div>
       )}
@@ -552,7 +978,10 @@ const handleCancelAppointment = async (id) => {
       {isHistoryModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 16000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '650px', maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>📜 Lịch Sử Sổ Khám Bệnh nhân #{currentSelectedPatientId}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #2563eb', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#2563eb' }}>📜 Lịch Sử Sổ Khám Bệnh nhân #{currentSelectedPatientId}</h3>
+              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
               {historyRecords.length > 0 ? historyRecords.map((rec) => (
                 <div key={rec.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>
@@ -577,9 +1006,6 @@ const handleCancelAppointment = async (id) => {
                 <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>📭 Chưa tìm thấy lịch sử lưu bệnh án nào của người bệnh này trên máy chủ.</div>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => { setIsHistoryModalOpen(false); setHistoryRecords([]); }} style={{ padding: '10px 24px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
-            </div>
           </div>
         </div>
       )}
@@ -587,13 +1013,13 @@ const handleCancelAppointment = async (id) => {
       {isDrugDetailModalOpen && drugDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 13000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '350px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>💊 Thông tin chi tiết thuốc</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>💊 Thông tin chi tiết thuốc</h3>
+              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
               <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{color: '#0f6eff', fontWeight: 'bold'}}>{drugDetails.name}</span></p>
               <p style={{ margin: 0 }}><strong>Đơn vị tính:</strong> {drugDetails.unit || 'Chưa cập nhật'}</p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsDrugDetailModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
             </div>
           </div>
         </div>
@@ -603,9 +1029,12 @@ const handleCancelAppointment = async (id) => {
       {isPatientApptModalOpen && selectedPatientForAppt && (
         <div className="modal" style={{ display: 'flex', zIndex: 13000 }}>
           <div className="modal-content" style={{ width: '700px', maxWidth: '90vw' }}>
-            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#0f172a' }}>
-              📋 Lịch hẹn chờ khám của: {selectedPatientForAppt.fullName || selectedPatientForAppt.name || selectedPatientForAppt.username}
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>
+                📋 Lịch hẹn chờ khám của: {selectedPatientForAppt.fullName || selectedPatientForAppt.name || selectedPatientForAppt.username}
+              </h3>
+              <button onClick={() => setIsPatientApptModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div className="table-responsive">
               <table className="data-table">
                 <thead>
@@ -650,9 +1079,6 @@ const handleCancelAppointment = async (id) => {
                 <p style={{ textAlign: 'center', marginTop: '20px', color: '#64748b' }}>Bệnh nhân này hiện không có lịch hẹn nào đang ở trạng thái <strong>Đã xác nhận</strong> để khám.</p>
               )}
             </div>
-            <div className="modal-actions" style={{ justifyContent: 'flex-end', marginTop: '15px' }}>
-              <button className="btn-outline" onClick={() => setIsPatientApptModalOpen(false)}>Đóng</button>
-            </div>
           </div>
         </div>
       )}
@@ -660,7 +1086,10 @@ const handleCancelAppointment = async (id) => {
       {isDeptModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 12000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>🏥 Danh sách Phòng ban / Chuyên khoa</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>🏥 Danh sách Phòng ban / Chuyên khoa</h3>
+              <button onClick={() => setIsDeptModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {departments.length > 0 ? departments.map((dept, index) => {
                 const deptName = dept.name || dept.departmentName || dept.department_name || "Chưa có tên";
@@ -673,9 +1102,6 @@ const handleCancelAppointment = async (id) => {
               }) : (
                 <p style={{ textAlign: 'center', color: '#64748b' }}>Không có dữ liệu phòng ban!</p>
               )}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button onClick={() => setIsDeptModalOpen(false)} style={{ padding: '8px 20px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Đóng lại</button>
             </div>
           </div>
         </div>

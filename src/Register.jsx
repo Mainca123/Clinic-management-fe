@@ -30,6 +30,18 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Lấy ngày tối đa có thể chọn cho ngày sinh (phải từ đủ 18 tuổi trở lên tính từ thời điểm hiện tại)
+  const getMaxBirthDate = () => {
+    const today = new Date();
+    today.setFullYear(today.getFullYear() - 18);
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const maxBirthDate = getMaxBirthDate();
+
   // Xử lý khi submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,6 +50,12 @@ const Register = () => {
     // 🚀 BẮT LỖI NGAY: Nếu 2 ô mật khẩu không giống nhau thì không cho gửi đi
     if (formData.password !== confirmPassword) {
       setErrorMsg('Mật khẩu và Xác nhận mật khẩu không khớp nhau!');
+      return;
+    }
+
+    // 🚀 BẮT LỖI: Ngày sinh phải từ đủ 18 tuổi trở lên
+    if (formData.dateOfBirth && formData.dateOfBirth > maxBirthDate) {
+      setErrorMsg('Bạn phải từ đủ 18 tuổi trở lên mới được đăng ký tài khoản!');
       return;
     }
 
@@ -59,15 +77,19 @@ const Register = () => {
     } catch (error) {
       console.error("Registration Error:", error);
       
-      // Bắt lỗi chi tiết từ Quarkus trả về
-      if (error.response && error.response.data) {
-        const violations = error.response.data.violations;
-        
-        if (violations && violations.length > 0) {
-          setErrorMsg(violations[0].message); 
-        } else {
-          const beMessage = error.response.data.message || error.response.data.details || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
-          setErrorMsg(beMessage);
+      // Bắt lỗi chi tiết từ Backend
+      if (error.response) {
+        if (error.response.status === 500) {
+          setErrorMsg('Tài khoản đã tồn tại.');
+        } else if (error.response.data) {
+          const violations = error.response.data.violations;
+          
+          if (violations && violations.length > 0) {
+            setErrorMsg(violations[0].message); 
+          } else {
+            const beMessage = error.response.data.message || error.response.data.details || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
+            setErrorMsg(beMessage);
+          }
         }
       } else {
         setErrorMsg('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
@@ -79,7 +101,27 @@ const Register = () => {
 
   return (
     <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handleSubmit} style={{ position: 'relative' }}>
+        <button 
+          type="button" 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            position: 'absolute', 
+            top: '15px', 
+            right: '15px', 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#ef4444', 
+            fontSize: '22px', 
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            lineHeight: 1,
+            padding: '4px 8px'
+          }}
+          title="Đóng / Quay lại"
+        >
+          ✕
+        </button>
         <h2>Tạo Tài Khoản MediPro</h2>
         
         {errorMsg && (
@@ -146,6 +188,7 @@ const Register = () => {
             <input
               type="date"
               name="dateOfBirth"
+              max={maxBirthDate}
               value={formData.dateOfBirth}
               onChange={handleChange}
               style={{ width: '100%', padding: '12px 16px', borderRadius: '40px', border: '1px solid #e2e8f0', fontFamily: 'Inter' }}

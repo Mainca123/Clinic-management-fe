@@ -1,8 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ activeTab, setActiveTab, handleLogout }) => {
-  const navigate = useNavigate();
   return (
     <aside className="sidebar">
       <div>
@@ -21,12 +19,7 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout }) => {
             <span className="icon"> 👥 </span> Quản lý tài khoản Bệnh nhân
           </div>
 
-          <div className="nav-item" onClick={() => navigate('/admin/create-doctor')} style={{ backgroundColor: '#eff6ff', color: '#0f6eff', fontWeight: 'bold' }}>
-            <span className="icon"> ➕ </span> Thêm Bác sĩ Mới
-          </div>
-          <div className={`nav-item ${activeTab === 'appointments' ? 'active' : ''}`} onClick={() => setActiveTab('appointments')}>
-            <span className="icon"> 📅 </span> Quản lý Lịch hẹn
-          </div>
+
           <div className={`nav-item ${activeTab === 'specialties' ? 'active' : ''}`} onClick={() => setActiveTab('specialties')}>
             <span className="icon"> 🏥 </span> Phòng ban / Khoa
           </div>

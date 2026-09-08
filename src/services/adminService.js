@@ -8,9 +8,13 @@ export const createDoctorAPI = async (doctorData) => {
 export const updateDoctorAPI = async (updateData) => {
     return await api.patch('/doctors', updateData);
 };
-// 3. THÊM MỚI: API Lấy danh sách bác sĩ (GET /api/v1/doctors)
-export const getAllDoctorsAPI = async (page = 0) => {
-    return await api.get(`/doctors?page=${page}`);
+// 3. THÊM MỚI: API Lấy danh sách bác sĩ (GET /api/v1/doctors, hỗ trợ lọc theo departmentId)
+export const getAllDoctorsAPI = async (page = 0, departmentId = null) => {
+    let url = `/doctors?page=${page}`;
+    if (departmentId !== null && departmentId !== undefined && departmentId !== '') {
+        url += `&departmentId=${departmentId}`;
+    }
+    return await api.get(url);
 };
 // 4. API Tìm kiếm (GET /api/v1/search)
 export const searchDoctorsAPI = async (keyword) => {

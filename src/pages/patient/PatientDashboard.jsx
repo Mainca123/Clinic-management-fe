@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUserAPI } from '../../services/authService';
 import { searchDoctorsAPI, getAllDoctorsAPI } from '../../services/adminService';
 import { getAllDepartmentsAPI } from '../../services/departmentService';
-import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI } from '../../services/appointmentService';
+import { createAppointmentAPI, getAllAppointmentsAPI, getAppointmentDetailsAPI, cancelAppointmentAPI, deleteAppointmentAPI, getAppointmentsByDoctorAndDateAPI } from '../../services/appointmentService';
 import { getAllDrugsAPI, getDrugDetailsAPI } from '../../services/drugService';
 import { getMedicalRecordDetailsAPI, getMedicalHistoryByPatientAPI, getPrescriptionsByRecordAPI } from '../../services/medicalRecordService';
+import { chatAIAPI } from '../../services/aiService';
 import '../../style/base.css';
 import '../../style/patient.css';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AppointmentSection from './AppointmentSection';
+import AiResponseContent from '../../components/ai/AiResponseContent';
+
+const AI_GREETING = 'Xin chào! Tôi là trợ lý AI của MediPro. Bạn có thể hỏi về triệu chứng, lịch hẹn hoặc cách theo dõi sức khỏe của mình.';
+
+const createClientId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -31,6 +39,56 @@ const PatientDashboard = () => {
   const [departments, setDepartments] = useState([]);
   const [drugs, setDrugs] = useState([]);
   const [doctorList, setDoctorList] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  const ALL_TIME_SLOTS = [
+    '07:00','07:30','08:00','08:30','09:00','09:30',
+    '10:00','10:30','11:00',
+    '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30'
+  ];
+
+  const fetchDoctorSlots = async (doctorId, date) => {
+    if (!doctorId || !date) {
+      setBookedSlots([]);
+      return;
+    }
+    setIsLoadingSlots(true);
+    const localTaken = appointments
+      .filter(a =>
+        (String(a.doctorId) === String(doctorId) || String(a.doctor_id) === String(doctorId)) &&
+        a.appointmentDate === date &&
+        a.status !== 'CANCELLED'
+      )
+      .map(a => (a.startTime || '').slice(0, 5));
+
+    let apiTaken = [];
+    try {
+      const response = await getAppointmentsByDoctorAndDateAPI(doctorId, date);
+      const apptList = Array.isArray(response.data?.data?.content || response.data?.data)
+        ? (response.data?.data?.content || response.data?.data)
+        : Array.isArray(response.data) ? response.data : [];
+
+      apiTaken = apptList
+        .filter(a => a.status !== 'CANCELLED')
+        .map(a => {
+          const rawTime = a.startTime || a.appointmentTime || a.time || a.start_time || a.shiftTime || a.slot || '';
+          return String(rawTime).slice(0, 5);
+        })
+        .filter(t => Boolean(t));
+    } catch (error) {
+      console.error('Lỗi khi lấy ca hẹn của bác sĩ:', error);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+    setBookedSlots(Array.from(new Set([...localTaken, ...apiTaken])));
+  };
+
+  useEffect(() => {
+    if (formData.doctorId && formData.appointmentDate) {
+      fetchDoctorSlots(formData.doctorId, formData.appointmentDate);
+    }
+  }, [formData.doctorId, formData.appointmentDate]);
   const [isDrugModalOpen, setIsDrugModalOpen] = useState(false);
   const [drugDetails, setDrugDetails] = useState(null);
   const [isDrugDetailModalOpen, setIsDrugDetailModalOpen] = useState(false);
@@ -44,13 +102,14 @@ const PatientDashboard = () => {
   const [historyRecords, setHistoryRecords] = useState([]);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, type: 'bot', text: 'Xin chào! Tôi là trợ lý AI của MediPro. Bạn có thể hỏi về triệu chứng, lịch hẹn hoặc cách theo dõi sức khỏe của mình.' }
+    { id: 'ai-greeting', type: 'bot', text: AI_GREETING, success: true }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
   const chatBoxRef = useRef(null);
   const chatInputRef = useRef(null);
-  
+
   useEffect(() => {
     chatInputRef.current?.focus();
   }, []);
@@ -72,8 +131,8 @@ const PatientDashboard = () => {
     };
     fetchUserData();
   }, []);
-  
-const fetchAppointmentsAndDepartments = async () => {
+
+  const fetchAppointmentsAndDepartments = async () => {
     setIsLoadingAppointments(true);
     try {
       // 1. TẢI VÀ SẮP XẾP LỊCH HẸN THEO THỜI GIAN
@@ -83,7 +142,7 @@ const fetchAppointmentsAndDepartments = async () => {
       apptList.sort((a, b) => {
         const dateA = new Date(`${a.appointmentDate}T${a.startTime}`);
         const dateB = new Date(`${b.appointmentDate}T${b.startTime}`);
-        return dateA - dateB; 
+        return dateA - dateB;
       });
       setAppointments(apptList);
 
@@ -107,10 +166,10 @@ const fetchAppointmentsAndDepartments = async () => {
       setIsLoadingAppointments(false);
     }
   };
-  
+
 
   useEffect(() => { fetchAppointmentsAndDepartments(); }, []);
-  
+
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchTerm.trim() !== '') {
@@ -127,7 +186,7 @@ const fetchAppointmentsAndDepartments = async () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
-  
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -143,14 +202,14 @@ const fetchAppointmentsAndDepartments = async () => {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   }, [chatMessages, isAiLoading]);
-  
+
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem('token');
     alert('Đăng xuất khỏi MediPro. Hẹn gặp lại bạn!');
     navigate('/login');
   };
-  
+
   const handleViewDrugDetails = async (id) => {
     try {
       const response = await getDrugDetailsAPI(id);
@@ -160,7 +219,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Lỗi khi tải chi tiết thuốc!");
     }
   };
-  
+
   const handleViewAppointmentDetails = async (id) => {
     try {
       const response = await getAppointmentDetailsAPI(id);
@@ -170,7 +229,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Không tìm thấy thông tin chi tiết lịch khám!");
     }
   };
-  
+
   const handleViewMedicalRecord = async (id) => {
     if (!id) return alert("Vui lòng nhập ID Bệnh án!");
     try {
@@ -187,7 +246,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Không tìm thấy bệnh án!");
     }
   };
-  
+
   const handleViewOwnHistory = async () => {
     const myId = user?.id || user?.userId;
     if (!myId) return alert("Hệ thống chưa tải xong dữ liệu tài khoản của bạn, vui lòng đợi giây lát!");
@@ -200,7 +259,7 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Không thể tải sổ khám sức khỏe của bạn lúc này!");
     }
   };
-  
+
   const handleCreateAppointment = async () => {
     try {
       // 🚀 SỬA LỖI MẤT TRIỆU CHỨNG: Gửi "rải thảm" nhiều trường để Backend không thể bắt trượt
@@ -223,26 +282,26 @@ const fetchAppointmentsAndDepartments = async () => {
       alert("Đặt lịch thất bại. Vui lòng kiểm tra lại thông tin!");
     }
   };
-  
-const handleCancelAppointment = async (id) => {
+
+  const handleCancelAppointment = async (id) => {
     const reasonText = window.prompt("Lý do hủy lịch:");
     if (reasonText === null) return;
-    
-    try {
-        // Tự động tìm ID bệnh nhân của lịch hẹn này
-        const currentAppt = appointments.find(a => a.id === id);
-        const pId = currentAppt ? (currentAppt.patientId || currentAppt.userId) : null;
 
-        // Gọi API gửi ID lịch, ID bệnh nhân, lý do và tự động truyền "CANCELLED"
-        await cancelAppointmentAPI(id, pId, reasonText);
-        
-        alert("Đã hủy lịch thành công!");
-        fetchAppointmentsAndDepartments(); // Tải lại danh sách
-    } catch (error) { 
-        alert("Lỗi hủy lịch! Vui lòng kiểm tra lại URL API."); 
+    try {
+      // Tự động tìm ID bệnh nhân của lịch hẹn này
+      const currentAppt = appointments.find(a => a.id === id);
+      const pId = currentAppt ? (currentAppt.patientId || currentAppt.userId) : null;
+
+      // Gọi API gửi ID lịch, ID bệnh nhân, lý do và tự động truyền "CANCELLED"
+      await cancelAppointmentAPI(id, pId, reasonText);
+
+      alert("Đã hủy lịch thành công!");
+      fetchAppointmentsAndDepartments(); // Tải lại danh sách
+    } catch (error) {
+      alert("Lỗi hủy lịch! Vui lòng kiểm tra lại URL API.");
     }
   };
-  
+
   const handlePatientDeleteAppointment = async (id) => {
     if (window.confirm(" 🗑 ️ Bạn muốn xóa vĩnh viễn thẻ lịch hẹn này khỏi danh sách hiển thị không?")) {
       try {
@@ -255,41 +314,73 @@ const handleCancelAppointment = async (id) => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    const messageText = chatInput.trim();
+  const sendAIMessage = async (rawMessage) => {
+    const messageText = rawMessage.trim();
     if (!messageText || isAiLoading) return;
 
-    const userMessage = { id: Date.now(), type: 'user', text: messageText };
+    const userMessage = { id: createClientId(), type: 'user', text: messageText };
     setChatMessages(prev => [...prev, userMessage]);
     setChatInput('');
     setIsAiLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/ai/chat',
-        { message: messageText },
-        {
-          headers: {
-            accept: 'application/json',
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const data = await chatAIAPI({ message: messageText, conversationId });
+      const nextConversationId = data.metadata?.conversationId;
 
-      const data = response.data || {};
-      const aiReply = typeof data === 'string'
-        ? data
-        : data?.message || data?.reply || data?.content || data?.data?.message || data?.data?.reply || 'AI chưa trả lời được. Vui lòng thử lại.';
+      if (nextConversationId) setConversationId(nextConversationId);
 
-      const payload = data.payload || data.data?.payload || null;
-      const tool = data.tool || data.data?.tool || null;
+      setChatMessages(prev => [...prev, {
+        id: createClientId(),
+        type: 'bot',
+        text: data.message,
+        payload: data.payload,
+        tool: data.tool,
+        success: data.success,
+        metadata: data.metadata
+      }]);
 
-      setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: aiReply, payload, tool }]);
+      if (['BOOKED', 'CANCELLED', 'RESCHEDULED'].includes(data.payload?.action)) {
+        fetchAppointmentsAndDepartments();
+      }
     } catch (error) {
-      setChatMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: 'Xin lỗi, hiện tại AI chưa thể phản hồi. Vui lòng thử lại sau.' }]);
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || 'Xin lỗi, hiện tại AI chưa thể phản hồi. Vui lòng thử lại sau.';
+      setChatMessages(prev => [...prev, {
+        id: createClientId(),
+        type: 'bot',
+        text: errorMessage,
+        success: false
+      }]);
     } finally {
       setIsAiLoading(false);
     }
+  };
+
+  const handleSendMessage = (event) => {
+    event.preventDefault();
+    sendAIMessage(chatInput);
+  };
+
+  const handleNewConversation = () => {
+    if (isAiLoading) return;
+    setConversationId(createClientId());
+    setChatMessages([{ id: createClientId(), type: 'bot', text: AI_GREETING, success: true }]);
+    setChatInput('');
+    chatInputRef.current?.focus();
+  };
+
+  const handleAISelectDoctor = (doctor, suggestion) => {
+    setDoctorList(prev => prev.some(item => String(item.id || item.userId) === String(doctor.id))
+      ? prev
+      : [doctor, ...prev]);
+    setFormData(prev => ({
+      ...prev,
+      doctorId: String(doctor.id),
+      departmentId: suggestion.departmentId ? String(suggestion.departmentId) : (prev.departmentId || ''),
+      symptoms: prev.symptoms || suggestion.advice || ''
+    }));
+    setIsModalOpen(true);
   };
 
   const trendData = [
@@ -298,7 +389,7 @@ const handleCancelAppointment = async (id) => {
     { label: 'Sốt', current: 62, previous: 58 },
     { label: 'Ho', current: 40, previous: 45 }
   ];
-  
+
   return (
     <div className="dashboard-container">
       <Sidebar handleLogout={handleLogout} setIsDrugModalOpen={setIsDrugModalOpen} />
@@ -314,44 +405,28 @@ const handleCancelAppointment = async (id) => {
               <div className="ai-chat-header">
                 <div>
                   <h3 style={{ margin: 0, color: '#0f172a' }}>💬 Trợ lý AI Hỗ trợ Bệnh nhân</h3>
-                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#475569' }}>Nổi bật, dễ nhận diện và luôn sẵn sàng giải đáp nhanh.</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#475569' }}>
+                    {conversationId ? `Phiên ${conversationId.slice(0, 8)}…` : 'Phiên sẽ được tạo sau tin nhắn đầu tiên'}
+                  </p>
                 </div>
-                <span className="ai-chat-badge">Tư vấn nhanh</span>
+                <button type="button" className="ai-new-chat" onClick={handleNewConversation} disabled={isAiLoading}>
+                  + Cuộc trò chuyện mới
+                </button>
               </div>
 
               <div ref={chatBoxRef} className="ai-chat-messages">
                 {chatMessages.map(msg => (
                   <div key={msg.id} className={`ai-chat-message ${msg.type}`}>
-                    {msg.type === 'bot' && msg.payload && msg.tool === 'DOCTOR_TOOL' ? (
-                      <div className="doctor-recommendation">
-                        <div className="doctor-reco-header">
-                          <div>
-                            <div style={{ fontSize: '14px', color: '#2563eb', fontWeight: 800 }}>{msg.payload.department || 'Khoa đề xuất'}</div>
-                            <div className="doctor-reco-advice" style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>{msg.text}</div>
-                          </div>
-                        </div>
-
-                        <div className="doctor-list">
-                          {Array.isArray(msg.payload.doctors) && msg.payload.doctors.length > 0 ? msg.payload.doctors.map(d => (
-                            <div key={d.id} className="doctor-card">
-                              <div className="doctor-card-left">
-                                <div className="doctor-name">{d.fullName}</div>
-                                <div className="doctor-meta">{d.specialization} · {d.experienceYears} năm kinh nghiệm</div>
-                                <div className="doctor-dept">{d.departmentName}</div>
-                              </div>
-                              <div className="doctor-card-right">
-                                <a href={`mailto:${d.email}`} className="doctor-contact">Liên hệ</a>
-                              </div>
-                            </div>
-                          )) : (
-                            <div className="ai-chat-bubble">{msg.text}</div>
-                          )}
-                        </div>
-                      </div>
+                    {msg.type === 'bot' ? (
+                      <AiResponseContent
+                        message={msg}
+                        onCommand={sendAIMessage}
+                        onSelectDoctor={handleAISelectDoctor}
+                        onViewAppointment={handleViewAppointmentDetails}
+                        onViewMedicalRecord={handleViewMedicalRecord}
+                      />
                     ) : (
-                      <div className="ai-chat-bubble">
-                        {msg.text}
-                      </div>
+                      <div className="ai-chat-bubble">{msg.text}</div>
                     )}
                   </div>
                 ))}
@@ -411,7 +486,7 @@ const handleCancelAppointment = async (id) => {
                         <div className={`trend-delta ${isUp ? 'up' : 'down'}`}>{isUp ? `▲ +${pct}%` : `▼ ${Math.abs(pct)}%`}</div>
                       </div>
                       <div className="trend-bar-bg">
-                        <div className="trend-bar-fill" style={{ width: `${Math.min(100, Math.max(6, (item.current/ (item.current+item.previous) * 100) ))}%`, background: isUp ? (severity === 'high' ? 'linear-gradient(90deg,#ef4444,#fb7185)' : severity === 'medium' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#60a5fa,#2563eb)') : 'linear-gradient(90deg,#60a5fa,#2563eb)' }} />
+                        <div className="trend-bar-fill" style={{ width: `${Math.min(100, Math.max(6, (item.current / (item.current + item.previous) * 100)))}%`, background: isUp ? (severity === 'high' ? 'linear-gradient(90deg,#ef4444,#fb7185)' : severity === 'medium' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#60a5fa,#2563eb)') : 'linear-gradient(90deg,#60a5fa,#2563eb)' }} />
                       </div>
                     </div>
                   );
@@ -425,12 +500,15 @@ const handleCancelAppointment = async (id) => {
 
         </div>
       </main>
-      
+
       {/* 1. Modal Bảng Giá Thuốc */}
       {isDrugModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 12000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}> 💊  Bảng giá thuốc niêm yết</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>💊 Bảng giá thuốc niêm yết</h3>
+              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Quay lại</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {drugs.length > 0 ? drugs.map(d => (
                 <div key={d.id} style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -444,20 +522,41 @@ const handleCancelAppointment = async (id) => {
                 <p>Chưa có dữ liệu thuốc!</p>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setIsDrugModalOpen(false)} style={{ padding: '8px 20px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Đóng lại</button>
-            </div>
           </div>
         </div>
       )}
-      
+
       {/* 2. Modal Đặt Lịch Khám */}
       {isModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '400px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: 0, color: '#0f172a' }}> ➕  Đặt lịch khám mới</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Vui lòng chọn bác sĩ và thời gian bạn muốn khám.</p>
-            <select value={formData.doctorId || ''} onChange={e => setFormData({...formData, doctorId: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Vui lòng chọn chuyên khoa, bác sĩ và thời gian bạn muốn khám.</p>
+            
+            <select
+              value={formData.departmentId || ''}
+              onChange={async (e) => {
+                const deptId = e.target.value;
+                setFormData(prev => ({ ...prev, departmentId: deptId, doctorId: '' }));
+                try {
+                  const responseDoc = await getAllDoctorsAPI(0, deptId);
+                  const docs = responseDoc.data?.data?.doctors || responseDoc.data?.data?.doctorList || responseDoc.data?.data?.content || responseDoc.data?.data || responseDoc.data || [];
+                  setDoctorList(Array.isArray(docs) ? docs : []);
+                } catch (err) {
+                  console.error('Lỗi khi lọc bác sĩ theo khoa:', err);
+                }
+              }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">-- Tất cả Chuyên khoa --</option>
+              {departments.map(dept => (
+                <option key={dept.id || dept.departmentId} value={dept.id || dept.departmentId}>
+                  🏥 {dept.name || dept.departmentName}
+                </option>
+              ))}
+            </select>
+
+            <select value={formData.doctorId || ''} onChange={e => setFormData({ ...formData, doctorId: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required>
               <option value="" disabled>-- Vui lòng chọn Bác sĩ --</option>
               {doctorList.map(doc => (
                 <option key={doc.id || doc.userId} value={doc.id || doc.userId}>
@@ -465,9 +564,40 @@ const handleCancelAppointment = async (id) => {
                 </option>
               ))}
             </select>
-            <input type="date" value={formData.appointmentDate || ''} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="time" value={formData.startTime || ''} onChange={e => setFormData({...formData, startTime: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
-            <input type="text" placeholder="Triệu chứng/Lý do" value={formData.symptoms || ''} onChange={e => setFormData({...formData, symptoms: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} />
+            <input type="date" min={new Date().toISOString().split('T')[0]} value={formData.appointmentDate || ''} onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} required />
+            
+            {formData.doctorId && formData.appointmentDate && (
+              <div style={{ marginTop: '5px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a', display: 'block', marginBottom: '6px' }}>⏰ Các ca khám ngày {formData.appointmentDate}:</label>
+                {isLoadingSlots ? (
+                  <div style={{ fontSize: '12px', color: '#0f6eff', textAlign: 'center', padding: '10px', background: '#eff6ff', borderRadius: '6px' }}>⏳ Đang kiểm tra lịch làm việc...</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                    {ALL_TIME_SLOTS.map(slot => {
+                      const isBooked = bookedSlots.includes(slot);
+                      const isSelected = formData.startTime === slot;
+                      return (
+                        <button key={slot} type="button" disabled={isBooked} onClick={() => setFormData({ ...formData, startTime: slot })}
+                          style={{
+                            padding: '6px 2px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            border: `1px solid ${isSelected ? '#0f6eff' : isBooked ? '#fca5a5' : '#cbd5e1'}`,
+                            background: isSelected ? '#0f6eff' : isBooked ? '#fef2f2' : '#ffffff',
+                            color: isSelected ? '#ffffff' : isBooked ? '#dc2626' : '#334155',
+                            cursor: isBooked ? 'not-allowed' : 'pointer'
+                          }}>
+                          {slot} {isBooked ? '⛔' : isSelected ? '✓' : '🟢'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <input type="text" placeholder="Triệu chứng/Lý do" value={formData.symptoms || ''} onChange={e => setFormData({ ...formData, symptoms: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button onClick={() => setIsModalOpen(false)} style={{ padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
               <button onClick={handleCreateAppointment} style={{ padding: '8px 16px', backgroundColor: '#0f6eff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Xác nhận Đặt lịch</button>
@@ -475,7 +605,7 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 3. Modal Chi Tiết Lịch Khám */}
       {isApptDetailModalOpen && apptDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 11000 }}>
@@ -497,7 +627,7 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 4. Modal Xem Chi Tiết Bệnh Án (Lẻ) */}
       {isRecordDetailModalOpen && recordDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 15000 }}>
@@ -517,7 +647,7 @@ const handleCancelAppointment = async (id) => {
                   {recordDetails.prescriptionDetails.map((med, idx) => (
                     <li key={idx} style={{ color: '#334155' }}>
                       <strong style={{ color: '#0f6eff' }}>{med.medicineName}</strong> - Số lượng: <strong>{med.quantity}</strong> {med.unit}
-                      <br/><span style={{ fontSize: '13px', color: '#64748b' }}>Cách dùng: {med.dosage}</span>
+                      <br /><span style={{ fontSize: '13px', color: '#64748b' }}>Cách dùng: {med.dosage}</span>
                     </li>
                   ))}
                 </ul>
@@ -531,7 +661,7 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 5. Modal Xem Lịch Sử Sổ Khám Bệnh Nhân */}
       {isHistoryModalOpen && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 16000 }}>
@@ -552,7 +682,7 @@ const handleCancelAppointment = async (id) => {
                     {rec.prescriptionDetails && rec.prescriptionDetails.length > 0 ? (
                       <ul style={{ margin: '5px 0 0 0', paddingLeft: '15px', fontSize: '13px' }}>
                         {rec.prescriptionDetails.map((med, idx) => (
-                          <li key={idx}>{med.medicineName} (Số lượng: {med.quantity} viên) - <span style={{color: '#64748b'}}>{med.dosage}</span></li>
+                          <li key={idx}>{med.medicineName} (Số lượng: {med.quantity} viên) - <span style={{ color: '#64748b' }}>{med.dosage}</span></li>
                         ))}
                       </ul>
                     ) : <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#94a3b8' }}> Không có đơn thuốc đi kèm.</span>}
@@ -568,14 +698,14 @@ const handleCancelAppointment = async (id) => {
           </div>
         </div>
       )}
-      
+
       {/* 6. Modal Chi Tiết Thuốc */}
       {isDrugDetailModalOpen && drugDetails && (
         <div style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 13000 }}>
           <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', width: '350px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: 0, color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}> 💊  Thông tin chi tiết thuốc</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px', color: '#334155', textAlign: 'left' }}>
-              <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{color: '#0f6eff', fontWeight: 'bold'}}>{drugDetails.name}</span></p>
+              <p style={{ margin: 0 }}><strong>Tên thuốc:</strong> <span style={{ color: '#0f6eff', fontWeight: 'bold' }}>{drugDetails.name}</span></p>
               <p style={{ margin: 0 }}><strong>Đơn vị tính:</strong> {drugDetails.unit || 'Chưa cập nhật'}</p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>

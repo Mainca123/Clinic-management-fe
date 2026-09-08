@@ -50,13 +50,15 @@ const DoctorExam = () => {
           <Link to="/doctor/appointments" className="nav-item">
             <span className="icon">📅</span> Lịch hẹn
           </Link>
+          <Link to="/doctor/exam" className="nav-item active">
+            <span className="icon">🩺</span> Khám bệnh
+          </Link>
         </nav>
       </aside>
 
       {/* MAIN CONTENT */}
       <main className="main-content">
         <header className="main-header">
-          <button className="btn-action secondary" onClick={handleGoBack}>← Quay lại</button>
           <div className="user-profile">
             <span className="user-name">Đang khám: <b>Nguyễn Văn Mạnh</b></span>
           </div>
@@ -64,7 +66,7 @@ const DoctorExam = () => {
 
         <div className="page-content">
           <div className="exam-grid">
-            
+
             {/* THÔNG TIN BỆNH NHÂN (CỘT TRÁI) */}
             <div className="exam-sidebar">
               <div className="card patient-summary">
@@ -101,13 +103,13 @@ const DoctorExam = () => {
 
                 <div className="form-section" style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Kê đơn thuốc</label>
-                  
+
                   {/* Khu vực render danh sách thuốc động */}
                   <div id="prescription-area">
                     {prescriptions.map((item, index) => (
                       <div key={index} className="prescription-row" style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                        <select 
-                          className="custom-select" 
+                        <select
+                          className="custom-select"
                           style={{ flex: 2 }}
                           value={item.medicine}
                           onChange={(e) => handleChangeMedicine(index, 'medicine', e.target.value)}
@@ -116,27 +118,27 @@ const DoctorExam = () => {
                           <option value="Amoxicillin">Amoxicillin</option>
                           <option value="Berberin">Berberin</option>
                         </select>
-                        
-                        <input 
-                          type="number" 
-                          placeholder="SL" 
-                          className="custom-input" 
-                          style={{ flex: 0.5 }} 
+
+                        <input
+                          type="number"
+                          placeholder="SL"
+                          className="custom-input"
+                          style={{ flex: 0.5 }}
                           value={item.quantity}
                           onChange={(e) => handleChangeMedicine(index, 'quantity', e.target.value)}
                         />
-                        
-                        <input 
-                          type="text" 
-                          placeholder="Cách dùng" 
-                          className="custom-input" 
-                          style={{ flex: 2 }} 
+
+                        <input
+                          type="text"
+                          placeholder="Cách dùng"
+                          className="custom-input"
+                          style={{ flex: 2 }}
                           value={item.usage}
                           onChange={(e) => handleChangeMedicine(index, 'usage', e.target.value)}
                         />
-                        
-                        <button 
-                          className="btn-delete" 
+
+                        <button
+                          className="btn-delete"
                           style={{ background: '#fee2e2', border: 'none', borderRadius: '8px', width: '40px', cursor: 'pointer' }}
                           onClick={() => handleDeleteMedicine(index)}
                         >
@@ -156,9 +158,9 @@ const DoctorExam = () => {
                   <input type="date" className="custom-input" style={{ width: '200px' }} />
                 </div>
 
-                <div className="form-actions" style={{ display: 'flex', gap: '10px', marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                  <button className="btn-action secondary" style={{ flex: 1 }}>Lưu nháp</button>
-                  <button className="btn-action" style={{ flex: 2 }} onClick={() => alert('Đã lưu bệnh án thành công!')}>
+                <div className="form-actions" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+                  <button className="btn-action secondary" style={{ minWidth: '120px' }}>Lưu nháp</button>
+                  <button className="btn-action" style={{ minWidth: '180px' }} onClick={() => alert('Đã lưu bệnh án thành công!')}>
                     Hoàn tất & Lưu bệnh án
                   </button>
                 </div>

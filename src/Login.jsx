@@ -6,7 +6,7 @@ import './style/base.css'; // Đảm bảo đúng đường dẫn CSS của bạ
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '', 
+    username: '',
     password: ''
   });
   const [errorMsg, setErrorMsg] = useState('');
@@ -28,8 +28,8 @@ const Login = () => {
       if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
         const userRole = response.data.role;
-        const checkPass = response.data.checkPass; 
-        
+        const checkPass = response.data.checkPass;
+
         // ĐÃ SỬA: Nếu checkPass === true thì ép sang trang đổi mật khẩu
         if (checkPass === true) {
           navigate('/change-password');
@@ -70,18 +70,38 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handleSubmit} style={{ position: 'relative' }}>
+        <button 
+          type="button" 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            position: 'absolute', 
+            top: '15px', 
+            right: '15px', 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#ef4444', 
+            fontSize: '22px', 
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            lineHeight: 1,
+            padding: '4px 8px'
+          }}
+          title="Đóng / Quay lại"
+        >
+          ✕
+        </button>
         <h2>Đăng Nhập MediPro</h2>
         {errorMsg && <p className="error-text" style={{ color: 'red' }}>{errorMsg}</p>}
-        
+
         <div className="input-group">
           <label>Tên đăng nhập</label>
-          <input 
-            type="text" 
-            name="username" 
-            value={formData.username} 
-            onChange={handleChange} 
-            required 
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
           />
         </div>
 
@@ -89,13 +109,13 @@ const Login = () => {
         <div className="input-group">
           <label>Mật khẩu</label>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <input 
+            <input
               // Đổi type qua lại giữa text và password dựa trên state
-              type={showPassword ? "text" : "password"} 
-              name="password" 
-              value={formData.password} 
-              onChange={handleChange} 
-              required 
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
               style={{ width: '100%', paddingRight: '40px', boxSizing: 'border-box' }}
             />
             <button
@@ -125,11 +145,11 @@ const Login = () => {
             Quên mật khẩu?
           </Link>
         </div>
-        
+
         <button type="submit" className="btn-login" disabled={loading}>
           {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
         </button>
-        
+
         <p className="auth-footer">
           Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
         </p>

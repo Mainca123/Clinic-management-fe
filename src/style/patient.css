@@ -264,6 +264,27 @@ display: inline-block;
   letter-spacing: 0.02em;
 }
 
+.ai-new-chat {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ai-new-chat:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.ai-new-chat:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .ai-chat-messages {
   display: flex;
   flex-direction: column;
@@ -308,6 +329,240 @@ display: inline-block;
   color: #334155;
   border: 1px solid #dbeafe;
   border-bottom-left-radius: 4px;
+}
+
+.ai-chat-bubble.error {
+  border-color: #fecaca;
+  background: #fff7f7;
+  color: #b91c1c;
+}
+
+.ai-response-stack {
+  width: min(100%, 560px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ai-response-stack > .ai-chat-bubble {
+  max-width: 100%;
+}
+
+.ai-payload-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.06);
+  color: #334155;
+}
+
+.ai-payload-card h4 {
+  margin: 3px 0 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.ai-payload-title-row,
+.ai-item-heading,
+.ai-confirm-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-payload-eyebrow {
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ai-payload-note {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ai-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.ai-item-card {
+  padding: 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.ai-item-card p {
+  margin: 7px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.ai-item-card.medicine {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ai-item-card.medicine span,
+.ai-item-heading span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.ai-detail-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 5px 12px;
+  margin-top: 9px;
+  font-size: 0.82rem;
+}
+
+.ai-detail-grid > span {
+  color: #64748b;
+}
+
+.ai-status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.ai-status.cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ai-status.completed,
+.ai-status.confirmed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ai-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ai-inline-actions button,
+.ai-link-action,
+.ai-primary-action,
+.doctor-contact {
+  border: 0;
+  border-radius: 9px;
+  padding: 7px 10px;
+  background: #e2e8f0;
+  color: #334155;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.ai-inline-actions button.confirm,
+.ai-primary-action,
+.doctor-contact {
+  background: #2563eb;
+  color: #fff;
+}
+
+.ai-inline-actions button.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ai-link-action {
+  margin-top: 10px;
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.ai-primary-action {
+  margin-top: 10px;
+}
+
+.ai-confirm-box {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.ai-confirm-box > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ai-confirm-box small {
+  color: #9a3412;
+}
+
+.ai-confirm-box .ai-inline-actions {
+  margin-top: 0;
+}
+
+.ai-time-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.ai-time-list span {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.ai-reexam {
+  margin-top: 9px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.85rem;
+}
+
+.ai-warning {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.ai-empty-text {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 .doctor-recommendation {
@@ -417,6 +672,11 @@ display: inline-block;
 .severity-badge.low {
   background: linear-gradient(90deg,#eff6ff,#e0f2fe);
   color: #1e40af;
+}
+
+.severity-badge.unknown {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .trend-bar-bg {
@@ -530,6 +790,29 @@ display: inline-block;
 .ai-chat-send:disabled {
   background: #94a3b8;
   cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .ai-chat-header,
+  .ai-payload-title-row,
+  .ai-confirm-box,
+  .doctor-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-new-chat,
+  .doctor-contact {
+    width: 100%;
+  }
+
+  .ai-chat-form {
+    flex-direction: column;
+  }
+
+  .ai-chat-send {
+    width: 100%;
+  }
 }
 
 .page-subtitle {

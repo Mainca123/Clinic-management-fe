@@ -26,6 +26,26 @@ export const cancelAppointmentAPI = async (id, reasonText) => {
     return await api.patch(`/appointments/${id}/status`, payload);
 };
 
+// Cập nhật trạng thái lịch hẹn chung (PATCH /api/v1/appointments/:id/status)
+export const updateAppointmentStatusAPI = async (id, status, reason = '') => {
+    const payload = { status, reason };
+    return await api.patch(`/appointments/${id}/status`, payload);
+};
+
+// Chuyển trạng thái lịch hẹn sang COMPLETED khi khám xong
+export const completeAppointmentAPI = async (id) => {
+    return await updateAppointmentStatusAPI(id, 'COMPLETED');
+};
+
+
+// Lấy lịch hẹn/thông tin ca của bác sĩ theo ngày (GET /api/v1/appointments/doctors/{doctorId}?date={date})
+export const getAppointmentsByDoctorAndDateAPI = async (doctorId, date) => {
+    let url = `/appointments/doctors/${doctorId}`;
+    if (date) {
+        url += `?date=${date}`;
+    }
+    return await api.get(url);
+};
 
 // xóa/hủy trạng thái lịch hẹn
 export const deleteAppointmentAPI = async (id) => {
